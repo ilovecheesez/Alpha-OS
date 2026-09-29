@@ -1,0 +1,78 @@
+# Alpha OS — base system — Ubuntu 26.04 LTS (resolute)
+# Provenance: package names verified as exact matches against
+#   archive.ubuntu.com/ubuntu/dists/resolute/{main,restricted,universe,multiverse}/binary-amd64/Packages.gz
+# Suite is RELEASED (Release dated 23 Apr 2026). One package per line, no versions.
+#
+# ARCHITECTURAL NOTE (applies to every *-desktop list in this directory):
+# The four flavour metapackages (ubuntu-desktop, ubuntucinnamon-desktop,
+# kubuntu-desktop, xubuntu-desktop) all exist, but ubuntu-desktop-minimal
+# declares `Conflicts: kubuntu-desktop-minimal xubuntu-desktop-minimal`, so
+# co-installing multiple Ubuntu flavours is unsatisfiable. Alpha OS therefore
+# lists component packages instead of flavour metapackages, so all four
+# desktops can coexist in one image.
+# VERIFY: whether ubuntucinnamon-desktop also declares a Conflicts stanza is
+# unconfirmed; this only matters if the flavour metapackages are ever revisited.
+#
+# `systemd` is intentionally NOT listed (it is pulled in by ubuntu-minimal and
+# we never want to fight the base). `ubiquity` is intentionally NOT listed:
+# the installer comes from the `--debian-installer live` live-build hook.
+
+ubuntu-minimal
+ubuntu-standard
+tasksel
+tasksel-data
+casper
+live-boot
+os-prober
+laptop-detect
+cryptsetup
+mtools
+dosfstools
+syslinux
+syslinux-common
+isolinux
+grub-pc-bin
+grub-efi-amd64-bin
+grub-efi-amd64-signed
+shim-signed
+linux-generic
+linux-image-generic
+linux-headers-generic
+linux-firmware
+efibootmgr
+fwupd
+debootstrap
+network-manager
+network-manager-gnome
+network-manager-openvpn
+network-manager-vpnc
+ubuntu-pro-client
+snapd
+flatpak
+locales
+keyboard-configuration
+user-setup
+lightdm
+lightdm-gtk-greeter
+xinit
+xauth
+dbus-x11
+mesa-utils
+vainfo
+libgl1-mesa-dri
+libglx-mesa0
+va-driver-all
+fonts-dejavu-core
+fonts-liberation
+fonts-noto-core
+fonts-ubuntu
+htop
+nano
+vim
+bash-completion
+sudo
+curl
+wget
+gnome-terminal
+ufw
+apparmor

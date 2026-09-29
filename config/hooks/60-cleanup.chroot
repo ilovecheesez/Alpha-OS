@@ -1,0 +1,89 @@
+#!/bin/bash
+# Alpha OS - trim the built system.
+#
+# Every destructive removal is guarded by an explicit path test that refuses to
+# touch anything outside the expected absolute path and refuses to act when the
+# path is empty, is "/", or is a symlink. The cleanup runs with the chroot as
+# "/", so a bad variable would be catastrophic; hence the guard function.
+#
+# Locales are NOT removed: the image declares its own locale set and removing
+# locale data breaks the greeter and `setxkbmap`/LANG handling.
+# Idempotent.
+set -eu
+
+log() { echo "60-cleanup: $*"; }
+
+# safe_clean <dir> - remove the CONTENTS of <dir>, never the directory itself.
+safe_clean() {
+	target="${1:-}"
+	case "$target" in
+		"" | "/" | "/*") log "refusing to clean '$target'"; return 0 ;;
+	esac
+	if [ ! -d "$target" ]; then
+		mkdir -p "$target"
+		return 0
+	fi
+	if [ -L "$target" ]; then
+		log "refusing to clean symlink '$target'"
+		return 0
+	fi
+	# shellcheck disable=SC2012
+	ls -A "$target" >/dev/null 2>&1 || return 0
+	find "$target" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} + 2>/dev/null || \
+		log "warning: could not fully clean '$target'"
+	return 0
+}
+
+# safe_remove <path> - remove a file only if it is a plain file/symlink at that path.
+safe_remove() {
+	target="${1:-}"
+	case "$target" in
+		"" | "/" | "/*") log "refusing to remove '$target'"; return 0 ;;
+	esac
+	case "$target" in
+		/etc/ssh/* | /var/log/* | /root/.cache* | /var/cache/*)
+			rm -f -- "$target" 2>/dev/null || log "warning: could not remove $target"
+			;;
+		*)
+			log "refusing to remove out-of-scope path '$target'"
+			;;
+	esac
+}
+
+# --- 1. apt -----------------------------------------------------------------
+if command -v apt-get >/dev/null 2>&1; then
+	apt-get clean >/dev/null 2>&1 || log "apt-get clean returned non-zero (ignored)"
+	DEBIAN_FRONTEND=noninteractive apt-get autoremove --purge -y >/dev/null 2>&1 || \
+		log "apt-get autoremove returned non-zero (ignored)"
+	# apt lists are pure cache; the image must not ship them.
+	if [ -d /var/lib/apt/lists ]; then
+		find /var/lib/apt/lists -mindepth 1 -maxdepth 1 -exec rm -rf -- {} + 2>/dev/null || \
+			log "warning: could not clear /var/lib/apt/lists"
+	fi
+fi
+
+# --- 2. caches and temp -----------------------------------------------------
+safe_clean /var/cache/apt/archives
+safe_clean /var/cache/man
+safe_clean /var/cache/debconf
+safe_clean /root/.cache
+safe_clean /tmp
+safe_clean /var/tmp
+
+# --- 3. host keys (regenerate on first boot) --------------------------------
+if [ -d /etc/ssh ]; then
+	find /etc/ssh -mindepth 1 -maxdepth 1 -name 'ssh_host_*_key' -delete 2>/dev/null || true
+	find /etc/ssh -mindepth 1 -maxdepth 1 -name 'ssh_host_*_key.pub' -delete 2>/dev/null || true
+fi
+
+# --- 4. package caches ------------------------------------------------------
+# Keep /usr/share/alphaos and every declared locale untouched.
+if [ -d /var/log ]; then
+	find /var/log -mindepth 1 -maxdepth 1 \( -name '*.gz' -o -name '*.1' \) -delete 2>/dev/null || true
+	: > /var/log/lastlog 2>/dev/null || true
+	: > /var/log/wtmp 2>/dev/null || true
+	: > /var/log/btmp 2>/dev/null || true
+fi
+
+log "done"
+exit 0

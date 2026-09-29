@@ -1,0 +1,84 @@
+# config/chroot -- Alpha OS
+
+# Filesystem used for the live filesystem in the ISO.
+LB_CHROOT_FILESYSTEM="squashfs"
+
+# Overlay filesystem backing the chroot during the build.  aufs is what this
+# live-build generation knows how to set up.
+LB_UNION_FILESYSTEM="aufs"
+
+# Do not expose the chroot's / to the outside via symlinks.
+LB_EXPOSED_ROOT="false"
+
+# Non-interactive chroot: every hook must run unattended.
+LB_INTERACTIVE="false"
+
+# Keyring trusted during debootstrap and package install.
+LB_KEYRING_PACKAGES="ubuntu-keyring"
+
+# Kernel flavour installed into the image.
+LB_LINUX_FLAVOURS="generic"
+
+# No additional kernel meta-packages beyond the flavour above.
+LB_LINUX_PACKAGES=""
+
+# Apply security updates during the build.
+LB_SECURITY="true"
+
+# Required argument in 3.0~a57; a bare --volatile makes getopt swallow the
+# following flag and the config run fails.
+LB_VOLATILE="true"
+
+# No backports (the flag does not even exist on lb config here).
+LB_BACKPORTS="false"
+
+# ---------------------------------------------------------------------------
+# Package lists
+#
+# There is NO LB_PACKAGES_LIST* variable in this version.  live-build globs
+# config/package-lists/*.list.chroot (and .list.chroot_install,
+# .list.chroot_live, .list.binary).  The following files are a documented
+# manifest of what Alpha OS expects to exist there, not settings:
+#
+#   00-base.list.chroot          core/base packages (live-boot, live-config...)
+#   10-desktop.list.chroot       Xorg, LXQt/desktop session, network stack
+#   20-applications.list.chroot  the Alpha OS userland applications
+#   30-hardware.list.chroot      firmware, mesa, bluetooth, printers
+#   40-localization.list.chroot  fonts, locales, keyboard layouts, ibus
+#   50-live-extras.list.chroot   casper extras, oem, backport-etc
+#   99-exclude.list.chroot       packages explicitly blocked
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Hooks
+#
+# config/hooks/ is FLAT in this version: there is no live/ or normal/ level.
+# Naming convention:
+#   NN-name.chroot_early   before the package install
+#   NN-name.chroot         inside the chroot, after package install
+#   NN-name.binary         on the host, during the binary stage
+# Alpha OS hooks:
+#   01-firmware.chroot_early  copy firmware before packages land
+#   05-hostname.chroot        set hostname (no LB_HOSTNAME exists; see
+#                            the note at the bottom of config/common)
+#   20-config-filesystem.chroot  enable the live overlay filesystem
+#   30-theme-hooks.chroot     Alpha OS branding/theme integration
+#   50-installer.chroot      ubiquity/DEBIAN_INSTALLER integration
+#   99-finalise.chroot       cleanup before the chroot is finalised
+#   05-efi-image.binary      hand-built boot/grub/efi.img for UEFI
+#                            (NOT written yet -- the image is BIOS-only today)
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# No flavour metapackages
+#
+# Alpha OS deliberately does NOT install ubuntu-desktop, ubuntucinnamon-desktop,
+# kubuntu-desktop or xubuntu-desktop (all four exist in resolute), because
+# ubuntu-desktop-minimal 1.570 declares
+#     Conflicts: kubuntu-desktop-minimal xubuntu-desktop-minimal
+# which makes multi-flavour co-installation unsatisfiable.  Every component
+# package (desktop session, network stack, office, media apps, ...) is therefore
+# listed individually in config/package-lists/.
+# VERIFY: whether ubuntucinnamon-desktop *also* declares a Conflicts stanza is
+# unconfirmed against the resolute archive; re-check before enabling it.
+# ---------------------------------------------------------------------------

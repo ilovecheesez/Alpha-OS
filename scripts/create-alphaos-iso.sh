@@ -1,62 +1,72 @@
-#!/bin/bash
-# Alpha OS - Create Bootable ISO using live-build
-# Ubuntu 26.04 LTS (Resolute Raccoon) based
-# Replaces the old multiboot2-based script with a proper live-build ISO
+#!/usr/bin/env bash
+# Alpha OS - create the release ISO and stage it in output/.
+#
+# This is a thin alias over scripts/build-iso.sh. There is no hand-rolled ISO
+# assembly here: no legacy bootloader stub, no hand-written grub.cfg, no host
+# kernel copy.
+# live-build (via auto/config + auto/build) produces binary.hybrid.iso or
+# binary.iso, and this script only names, checksums and reports it.
+#
+# The legacy custom bootloader and dead OS codenames that used to appear here
+# are gone; see scripts/run-tests.sh, which fails the build if they come back.
 
-set -e
+set -euo pipefail
 
-LIVE_CONFIG_DIR="${1:-live/config}"
-OUTPUT_DIR="${2:-output}"
-ISO_NAME="alpha-os-1.0.0-$(date +%Y%m%d)"
-ISO_FILE="${OUTPUT_DIR}/${ISO_NAME}.iso"
+PROJECT="Alpha OS"
+PROJECT_VERSION="1.0.0"
 
-echo "============================================"
-echo "Alpha OS ISO Creator (live-build)"
-echo "============================================"
-echo ""
+REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+BUILD_SH="$REPO_ROOT/scripts/build-iso.sh"
+OUTPUT_DIR="$REPO_ROOT/output"
 
-# Check for live-build
-if ! command -v lb &> /dev/null; then
-    echo "[ERROR] live-build not found. Install it:"
-    echo "  sudo apt-get install live-build"
-    exit 1
+TODAY="$(date +%Y%m%d)"
+RELEASE_NAME="alpha-os-${PROJECT_VERSION}-${TODAY}"
+RELEASE_ISO="${OUTPUT_DIR}/${RELEASE_NAME}.iso"
+
+cd "$REPO_ROOT"
+
+if [ ! -x "$BUILD_SH" ]; then
+	echo "error: $BUILD_SH is missing or not executable" >&2
+	exit 1
 fi
 
-# Create output directory
+echo "============================================================"
+echo " $PROJECT $PROJECT_VERSION - release ISO"
+echo " target: $RELEASE_NAME.iso"
+echo "============================================================"
+
+"$BUILD_SH" all "$@"
+
+SRC=""
+for candidate in binary.hybrid.iso binary.iso; do
+	if [ -f "$REPO_ROOT/$candidate" ]; then
+		SRC="$REPO_ROOT/$candidate"
+		break
+	fi
+done
+
+if [ -z "$SRC" ]; then
+	echo "error: live-build produced no binary.hybrid.iso or binary.iso" >&2
+	exit 1
+fi
+
 mkdir -p "$OUTPUT_DIR"
+cp -f "$SRC" "$RELEASE_ISO"
 
-# Check if live-build is already configured
-if [ ! -d "$LIVE_CONFIG_DIR" ]; then
-    echo "[ERROR] live-build configuration not found at: $LIVE_CONFIG_DIR"
-    echo "Run: make live-config"
-    exit 1
-fi
+echo
+echo "------------------------------------------------------------"
+echo "ISO:    $RELEASE_ISO"
+echo "Size:   $(du -h "$RELEASE_ISO" | cut -f1) ($(stat -c %s "$RELEASE_ISO") bytes)"
 
-# Clean previous build
-echo "[CLEAN] Cleaning previous build..."
-lb clean 2>/dev/null || true
-
-# Build the ISO
-echo "[BUILD] Building ISO with live-build..."
-lb build
-
-# Copy the resulting ISO
-if [ -f "live-image-amd64.hybrid.iso" ]; then
-    cp "live-image-amd64.hybrid.iso" "$ISO_FILE"
-    echo ""
-    echo "============================================"
-    echo "ISO Created Successfully!"
-    echo "============================================"
-    echo ""
-    echo "Output: $ISO_FILE"
-    echo "Size: $(du -h "$ISO_FILE" | cut -f1)"
-    echo ""
-    echo "To test in QEMU:"
-    echo "  make run"
-    echo ""
-    echo "To write to USB:"
-    echo "  sudo dd if=$ISO_FILE of=/dev/sdX bs=4M status=progress"
-else
-    echo "[ERROR] ISO build failed. Check the output above for errors."
-    exit 1
-fi
+(cd "$OUTPUT_DIR" && sha256sum "${RELEASE_NAME}.iso" >SHA256SUMS)
+echo "SHA256: $(cut -d' ' -f1 <"$OUTPUT_DIR/SHA256SUMS")"
+echo "Sum file: $OUTPUT_DIR/SHA256SUMS"
+echo
+echo "Write to a USB stick (replace /dev/sdX with your device):"
+echo "  sudo dd if=$RELEASE_ISO of=/dev/sdX bs=4M status=progress conv=fsync"
+echo
+echo "Test it in QEMU (BIOS):"
+echo "  make run"
+echo "  # or: qemu-system-x86_64 -m 4G -smp 2 -enable-kvm \\"
+echo "  #      -drive file=$RELEASE_ISO,media=cdrom,readonly=on -boot d"
+echo "------------------------------------------------------------"

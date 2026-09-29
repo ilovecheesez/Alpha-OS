@@ -1,0 +1,97 @@
+# config/binary -- Alpha OS
+
+# iso-hybrid produces binary.hybrid.iso (isohybrid'd for BIOS/USB boot).
+LB_BINARY_IMAGES="iso-hybrid"
+
+# Read-write layer on the hybrid ISO.
+LB_BINARY_FILESYSTEM="fat16"
+
+# Volume/label of the writable layer and of the ISO.
+LB_HDD_LABEL="ALPHA_OS"
+
+# 0 = let live-build size the loop image automatically.
+LB_HDD_SIZE="0"
+
+# ISO 9660 metadata.
+LB_ISO_APPLICATION="Alpha OS"
+LB_ISO_PREPARER="Alpha OS built with live-build (Ubuntu 26.04)"
+LB_ISO_PUBLISHER="Alpha OS Project; https://github.com/ilovecheez/Alpha-OS; alpha-os@localhost"
+# NOTE: the volume id is truncated at 32 characters by the ISO9660 writer.
+LB_ISO_VOLUME="Alpha OS $(date +%Y%m%d)"
+
+# syslinux, not grub: the grub path in 3.0~a57 is BIOS-only and cannot produce
+# a UEFI-bootable image.  "grub2" is not a valid LB_BOOTLOADER value.
+LB_BOOTLOADER="syslinux"
+
+# MUST be "live-build".  Ubuntu's default theme (ubuntu-oneiric) is
+# uninstallable on resolute -- syslinux-themes-* and gfxboot-theme-ubuntu are
+# absent -- and Check_package then exits 1.  The "live-build" theme uses the
+# packaged /usr/share/live/build/bootloaders/ and needs only librsvg2-bin.
+LB_SYSINUX_THEME="live-build"
+
+# NOTE: do NOT add "boot=casper" here.  Ubuntu's live-build patch rewrites
+# boot=live to boot=casper automatically.
+LB_BOOTAPPEND_LIVE="quiet splash"
+LB_BOOTAPPEND_INSTALL="quiet splash"
+LB_BOOTAPPEND_FAILSAFE="nomodeset nosplash noapic nodma nomce nolapic vga=normal"
+
+# "none" because lb_binary_memtest Check_packages memtest86+ and would abort the
+# build over an optional memtest menu entry.
+LB_MEMTEST="none"
+
+# ubiquity 26.04.1 is mapped with the "live" sub-value.  A plain
+# --debian-installer means classic d-i udebs, which is the wrong flag here.
+LB_DEBIAN_INSTALLER="live"
+LB_DEBIAN_INSTALLER_DISTRIBUTION="resolute"
+LB_DEBIAN_INSTALLER_GUI="true"
+LB_DEBIAN_INSTALLER_PRESEEDFILE=""
+
+# linux-firmware in both stages.
+LB_FIRMWARE_BINARY="true"
+LB_FIRMWARE_CHROOT="true"
+
+# Keep apt indices in the binary stage so the produced system can install
+# packages without a network refresh.
+LB_APT_INDICES="true"
+
+# Build the chroot using chroot rather than unshare.
+LB_BUILD_WITH_CHROOT="true"
+
+LB_CHECKSUMS="sha256"
+
+# Compression of the squashfs filesystem.
+LB_COMPRESSION="xz"
+
+# "false" because lb_binary_zsync Check_packages the zsync package and would
+# abort the build if it is absent from the chroot.
+LB_ZSYNC="false"
+
+# No grub splash image (we boot syslinux).
+LB_GRUB_SPLASH=""
+
+LB_WIN32_LOADER="false"
+
+# No swap file in the live image (0 = disabled).
+LB_SWAP_FILE_PATH="/swap.img"
+LB_SWAP_FILE_SIZE="0"
+
+# ---------------------------------------------------------------------------
+# UEFI / hybrid explanation
+#
+# This live-build generation has no built-in BIOS+UEFI hybrid path (Ubuntu's
+# own patch says so explicitly).  isohybrid only makes a BIOS hybrid image.
+#
+# For UEFI you need, per LP #1864426, in config/common:
+#     ISOHYBRID_OPTIONS="--uefi"
+#     GENISOIMAGE_OPTIONS_EXTRA="-eltorito-alt-boot -efi-boot boot/grub/efi.img -no-emul-boot -joliet-long"
+# plus a hand-built boot/grub/efi.img produced by a *.binary hook.  That hook
+# is NOT written yet, so the tree is currently BIOS-bootable only.
+#
+# --isohybrid-options is broken in this version (lb_config:651 assigns
+# LB_ISOHYBRID_OPTIONS but emits a bare ISOHYBRID_OPTIONS="${ISOHYBRID_OPTIONS}",
+# silently losing the value), so the variable above is set by hand and
+# re-applied by auto/config after `lb config` rewrites config/common.
+#
+# lb_binary_iso also Check_packages chroot/usr/bin/isohybrid, so the `syslinux`
+# package MUST be present in the chroot (it is, via the base package list).
+# ---------------------------------------------------------------------------

@@ -1,0 +1,50 @@
+#!/bin/sh
+# auto/build -- build the Alpha OS live image.
+#
+# live-build 3.0~a57 wants to run as root for the chroot stages.
+
+set -e
+
+if [ "$(id -u)" -ne 0 ]; then
+	echo "auto/build: must run as root; re-executing with sudo" >&2
+	exec sudo "$0" "$@"
+fi
+
+echo "==> Alpha OS: building live image (this takes a while)"
+
+lb build
+
+# The output name is hard-coded by live-build; there is no --image-name here.
+ISO=""
+if [ -f binary.hybrid.iso ]; then
+	ISO=binary.hybrid.iso
+elif [ -f binary.iso ]; then
+	ISO=binary.iso
+fi
+
+if [ -z "$ISO" ]; then
+	echo "auto/build: ERROR - no ISO produced (binary.hybrid.iso / binary.iso missing)" >&2
+	exit 1
+fi
+
+VERSION=$(sed -n 's/^LB_DISTRIBUTION="\(.*\)"$/\1/p' config/common)
+VERSION=${VERSION:-unknown}
+STAMP=$(date +%Y%m%d)
+DEST="output/alpha-os-${VERSION}-${STAMP}.iso"
+
+mkdir -p output
+cp "$ISO" "$DEST"
+
+echo "==> ISO:  $DEST"
+ls -lh "$DEST"
+echo "==> SHA256:"
+sha256sum "$DEST"
+
+echo
+echo "==> Test it with:"
+echo "    qemu-system-x86_64 -enable-kvm -m 2048 -smp 2 \\"
+echo "        -drive file=${DEST},format=raw,if=virtio \\"
+echo "        -boot d -vga std"
+echo
+echo "==> NOTE: this tree is BIOS-bootable only.  The boot/grub/efi.img *.binary"
+echo "    hook that UEFI boot requires has not been written yet."

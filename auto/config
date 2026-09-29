@@ -1,0 +1,111 @@
+#!/bin/sh
+# auto/config -- (re)generate the Alpha OS live-build configuration tree.
+#
+# Requires root (or sudo): `lb config` writes into the build tree and live-build
+# refuses to run as a non-root user for the bootstrap stages.
+
+set -e
+
+if [ "$(id -u)" -ne 0 ]; then
+	echo "auto/config: must run as root; re-executing with sudo" >&2
+	exec sudo "$0" "$@"
+fi
+
+echo "==> Alpha OS: configuring live-build 3.0~a57-1ubuntu54 (Ubuntu 26.04)"
+
+# Flag notes (comments cannot live inside the continued command itself, since a
+# `#` comment line would swallow the rest of the invocation):
+#   --mode ubuntu         hard-codes LB_DISTRIBUTION=precise (2012 leftover in
+#                         functions/defaults.sh), so --distribution resolute is
+#                         MANDATORY or the build silently produces Ubuntu 12.04.
+#   --mirror-*            unqualified is correct here; --mirrors-chroot /
+#                         --mirrors-binary (plural) do not exist in this version.
+#   --initramfs auto      casper is the default in resolute main and "auto"
+#                         resolves to casper in ubuntu mode.
+#   --bootloader syslinux syslinux, not grub: the grub path here is BIOS-only and
+#                         "grub2" is not a valid value.
+#   --syslinux-theme live-build
+#                         MUST be live-build; the default ubuntu-oneiric theme
+#                         is uninstallable on resolute and Check_package aborts.
+#   --debian-installer live
+#                         "live" maps ubiquity 26.04.1; a bare --debian-installer
+#                         means classic d-i udebs (wrong flag).
+#   --volatile true       MANDATORY argument; a bare --volatile makes getopt
+#                         swallow the next flag and the run fails.
+#   --memtest none        lb_binary_memtest Check_packages memtest86+.
+#   --zsync false         lb_binary_zsync Check_packages the zsync package.
+#   --bootappend-live     no "boot=casper": Ubuntu's patch rewrites boot=live.
+#   --apt-indices / --build-with-chroot
+#                         boolean switches, no argument in this version.
+
+lb config \
+	--mode ubuntu \
+	--distribution resolute \
+	--architectures amd64 \
+	--linux-flavours generic \
+	--archive-areas "main restricted universe multiverse" \
+	--mirror-bootstrap "http://archive.ubuntu.com/ubuntu/" \
+	--mirror-chroot "http://archive.ubuntu.com/ubuntu/" \
+	--mirror-binary "http://archive.ubuntu.com/ubuntu/" \
+	--mirror-bootstrap-security "http://security.ubuntu.com/ubuntu" \
+	--mirror-chroot-security "http://security.ubuntu.com/ubuntu" \
+	--mirror-binary-security "http://security.ubuntu.com/ubuntu" \
+	--initramfs auto \
+	--initramfs-compression gzip \
+	--binary-images iso-hybrid \
+	--bootloader syslinux \
+	--syslinux-theme live-build \
+	--debian-installer live \
+	--debian-installer-gui true \
+	--firmware-binary true \
+	--firmware-chroot true \
+	--security true \
+	--apt-recommends false \
+	--volatile true \
+	--cache true \
+	--checksums sha256 \
+	--initsystem systemd \
+	--memtest none \
+	--zsync false \
+	--apt-indices \
+	--build-with-chroot \
+	--bootappend-live "quiet splash" \
+	--bootappend-install "quiet splash" \
+	--bootappend-failsafe "nomodeset nosplash noapic nodma nomce nolapic vga=normal" \
+	--iso-application "Alpha OS" \
+	--iso-preparer "Alpha OS built with live-build (Ubuntu 26.04)" \
+	--iso-publisher "Alpha OS Project; https://github.com/ilovecheez/Alpha-OS; alpha-os@localhost" \
+	--iso-volume "Alpha OS $(date +%Y%m%d)"
+
+# ---------------------------------------------------------------------------
+# `lb config` writes config/common with `cat >`, i.e. it OVERWRITES the file.
+# Two UEFI-related variables therefore have to be (re)applied by hand:
+#
+#   ISOHYBRID_OPTIONS         -- lb_config:651 assigns LB_ISOHYBRID_OPTIONS but
+#                               emits a bare ISOHYBRID_OPTIONS="${ISOHYBRID_OPTIONS}",
+#                               so --isohybrid-options is silently lost.
+#                               lb_binary_iso reads exactly this name.
+#   GENISOIMAGE_OPTIONS_EXTRA -- Ubuntu patch (LP #1864426); works, but is also
+#                               overwritten, so it is re-applied here.
+#
+# Two branches, so this works whether or not the lines already exist.
+# NOTE: boot/grub/efi.img is still built by hand in a *.binary hook that is not
+# written yet, so the resulting image is BIOS-bootable only.
+# ---------------------------------------------------------------------------
+
+ISOHYBRID_OPTIONS_LINE='ISOHYBRID_OPTIONS="--uefi"'
+GENISO_EXTRA_LINE='GENISOIMAGE_OPTIONS_EXTRA="-eltorito-alt-boot -efi-boot boot/grub/efi.img -no-emul-boot -joliet-long"'
+
+if grep -q '^ISOHYBRID_OPTIONS=' config/common 2>/dev/null; then
+	sed -i "s|^ISOHYBRID_OPTIONS=.*$|${ISOHYBRID_OPTIONS_LINE}|" config/common
+else
+	printf '%s\n' "$ISOHYBRID_OPTIONS_LINE" >>config/common
+fi
+
+if grep -q '^GENISOIMAGE_OPTIONS_EXTRA=' config/common 2>/dev/null; then
+	sed -i "s|^GENISOIMAGE_OPTIONS_EXTRA=.*$|${GENISO_EXTRA_LINE}|" config/common
+else
+	printf '%s\n' "$GENISO_EXTRA_LINE" >>config/common
+fi
+
+echo "==> Configuration written. Review config/common, config/chroot and config/binary."

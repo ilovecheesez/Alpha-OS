@@ -1,0 +1,30 @@
+# Alpha OS — Wayland display stack — Ubuntu 26.04 LTS (resolute)
+# Provenance: names verified as exact matches against the resolute
+# binary-amd64 Packages indexes on archive.ubuntu.com (released 23 Apr 2026).
+#
+# `xdg-desktop-portal` (1.21.1) is REQUIRED and not optional: the
+# -gtk/-kde/-gnome/-xapp backends all hard-Depend on it. `xapps-common`
+# is pulled in transitively by `xdg-desktop-portal-xapp` (31-cinnamon).
+# `labwc` and `wayfire` ship standalone sessions usable by any DE.
+
+wayland-protocols
+libwayland-bin
+libwayland-dev
+libwayland-server0
+libwayland-client0
+libwayland-cursor0
+libwayland-egl1
+wayland-utils
+weston
+xwayland
+xdg-desktop-portal
+xdg-desktop-portal-gtk
+xdg-desktop-portal-kde
+xdg-desktop-portal-xapp
+xdg-desktop-portal-gnome
+labwc
+wayfire
+swaybg
+seatd
+libseat1
+libinput-tools

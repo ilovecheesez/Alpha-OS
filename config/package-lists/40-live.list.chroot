@@ -1,0 +1,24 @@
+# Alpha OS — live-session runtime — Ubuntu 26.04 LTS (resolute)
+# Provenance: names verified as exact matches against the resolute
+# binary-amd64 Packages indexes on archive.ubuntu.com (released 23 Apr 2026).
+# gdisk, parted, ntfs-3g and exfatprogs were each independently confirmed
+# present in the resolute indexes (gdisk in universe, parted/ntfs-3g/exfatprogs
+# in main); they are listed, not commented out.
+# VERIFY: none outstanding for this file, but note that `ntfs-3g` is in main
+# and the others in universe — if the build ever restricts the components it
+# enables (e.g. main-only for the installer chroot), re-check these four.
+
+casper
+laptop-detect
+os-prober
+usbutils
+pciutils
+smartmontools
+gdisk
+parted
+ntfs-3g
+exfatprogs
+xdg-desktop-portal
+xdg-user-dirs
+xdg-utils
+dbus-x11

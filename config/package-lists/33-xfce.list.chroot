@@ -1,0 +1,45 @@
+# Alpha OS — XFCE 4.20.4 desktop — Ubuntu 26.04 LTS (resolute)
+# Provenance: names verified as exact matches against the resolute
+# binary-amd64 Packages indexes on archive.ubuntu.com (released 23 Apr 2026).
+#
+# Verified from Contents-amd64.gz, `xfce4-session` 4.20.4 ships BOTH
+#   xsessions/xfce.desktop
+#   wayland-sessions/xfce-wayland.desktop   (native, labwc-backed)
+# so XFCE here is genuinely dual-stack from one package.
+#
+# `xfce4-mixer` is GONE in resolute; `xfce4-pulseaudio-plugin` replaces it
+# and is the mixer Alpha OS ships.
+
+xfce4
+xfce4-goodies
+xfce4-panel
+xfce4-session
+xfwm4
+xfdesktop4
+xfce4-appfinder
+xfce4-power-manager
+xfce4-screenshooter
+xfce4-screensaver
+xfce4-taskmanager
+xfce4-notes
+thunar
+thunar-archive-plugin
+thunar-media-tags-plugin
+thunar-volman
+thunar-vcs-plugin
+xfce4-terminal
+mousepad
+parole
+ristretto
+xfce4-settings
+xfce4-pulseaudio-plugin
+catfish
+xfce4-whiskermenu-plugin
+labwc
+wayfire
+xdg-desktop-portal-gtk
+lightdm
+lightdm-gtk-greeter
+firefox
+libreoffice
+system-config-printer

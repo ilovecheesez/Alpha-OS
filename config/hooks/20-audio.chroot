@@ -1,0 +1,127 @@
+#!/bin/bash
+# Alpha OS - PipeWire-first audio.
+#
+# 26.04 can pull in the standalone pulseaudio daemon, which races
+# pipewire-pulse for the socket. Mask it. systemd is NOT running in the chroot,
+# so units are masked by symlinking to /dev/null and sysvinit scripts are disabled.
+# Idempotent.
+set -eu
+
+log() { echo "20-audio: $*"; }
+
+mask_unit() {
+	unit="$1"
+	dir="/etc/systemd/system"
+	mkdir -p "$dir"
+	if [ -e "$dir/$unit" ] || [ -L "$dir/$unit" ]; then
+		current=$(readlink -f "$dir/$unit" 2>/dev/null || echo none)
+		if [ "$current" = "/dev/null" ]; then
+			return 0
+		fi
+		log "re-masking $unit"
+		rm -f "$dir/$unit"
+	fi
+	ln -sf /dev/null "$dir/$unit"
+	log "masked $unit"
+}
+
+# --- 1. Mask the standalone PulseAudio daemon -------------------------------
+for unit in pulseaudio.service pulseaudio.socket; do
+	mask_unit "$unit"
+done
+
+# --- 2. Sysvinit / init-script fallbacks ------------------------------------
+if [ -d /etc/init.d ]; then
+	for s in pulseaudio pulse; do
+		if [ -e "/etc/init.d/$s" ]; then
+			if command -v update-rc.d >/dev/null 2>&1; then
+				update-rc.d "$s" disable >/dev/null 2>&1 || true
+			fi
+			if [ -x "/etc/init.d/$s" ] && [ ! -f "/etc/init.d/$s.alphaos-off" ]; then
+				# Neutralise direct invocation without removing the packaged file.
+				if ! grep -q 'alphaos: disabled' "/etc/init.d/$s" 2>/dev/null; then
+					sed -i '2i # alphaos: disabled in favour of pipewire-pulse\nexit 0' "/etc/init.d/$s" || true
+				fi
+			fi
+		fi
+	done
+fi
+
+# --- 3. ALSA defaults --------------------------------------------------------
+mkdir -p /etc/modprobe.d
+cat > /etc/modprobe.d/99-alphaos-audio.conf <<'EOF'
+# Alpha OS audio defaults.
+# snd_hda_intel power saving is disabled: for a live image, latency beats power.
+options snd_hda_intel power_save=0 power_save_controller=0
+options snd_ac97_codec power_save=0
+EOF
+
+# /etc/asound.conf is only written when the user has no own config, so existing
+# customisation is respected (idempotent).
+if [ ! -e /etc/asound.conf ]; then
+	cat > /etc/asound.conf <<'EOF'
+# Alpha OS ALSA defaults. Users override in ~/.asoundrc.
+pcm.!default {
+    type plug
+    slave.pcm "dmixed"
+}
+ctl.!default {
+    type plug
+    slave.ctl "dmixed"
+}
+pcm.dmixed {
+    type dmix
+    ipc_key 1024
+    slave {
+        pcm "hw:0,0"
+        rate 48000
+        channels 2
+        format S32_LE
+    }
+}
+EOF
+fi
+
+# --- 4. pipewire media-session policy ---------------------------------------
+# The media-session policy is a directory of symlinks into
+# /usr/share/pipewire/media-session.d (shipped by the pipewire media-session
+# packages). "with-pulseaudio" is the policy that makes apps use libpulse, which
+# is redirected to pipewire-pulse.
+POLICY_SRC=""
+for d in /usr/share/pipewire/media-session.d /usr/share/pipewire/media-session.d/*; do
+	[ -d "$d" ] || continue
+	if [ -z "$POLICY_SRC" ]; then
+		POLICY_SRC="$d"
+	fi
+done
+
+if [ -n "$POLICY_SRC" ] && [ -d "$POLICY_SRC/with-pulseaudio" ]; then
+	dest=/etc/pipewire/media-session.d
+	mkdir -p "$dest/with-pulseaudio"
+	for f in "$POLICY_SRC/with-pulseaudio"/*; do
+		[ -e "$f" ] || continue
+		ln -sf "$f" "$dest/with-pulseaudio/$(basename "$f")"
+	done
+	ln -sfn "$POLICY_SRC/with-pulseaudio" "$dest/default"
+	log "activated with-pulseaudio media-session policy from $POLICY_SRC"
+elif command -v pipewire >/dev/null 2>&1 || dpkg -s pipewire >/dev/null 2>&1; then
+	# No media-session packages: activate the policy via the shipped helper.
+	if command -v /usr/bin/pipewire-switch-media-session >/dev/null 2>&1; then
+		mkdir -p /etc/pipewire
+		/usr/bin/pipewire-media-session with-pulseaudio >/dev/null 2>&1 || true
+		/usr/bin/pipewire-switch-media-session with-pulseaudio >/dev/null 2>&1 || true
+		log "activated with-pulseaudio via pipewire-switch-media-session"
+	else
+		log "no media-session policy dir found; pipewire defaults will apply"
+	fi
+else
+	log "pipewire not installed; nothing to do"
+fi
+
+# --- 5. Make sure pipewire-pulse is enabled if systemctl exists -------------
+if command -v systemctl >/dev/null 2>&1; then
+	systemctl --root=/ enable pipewire-pulse.service >/dev/null 2>&1 || true
+fi
+
+log "done"
+exit 0

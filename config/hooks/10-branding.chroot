@@ -1,0 +1,109 @@
+#!/bin/bash
+# Alpha OS - OS branding (os-release, lsb-release, issue banners, motd).
+#
+# The image still identifies as Ubuntu for apt/dpkg purposes, so /etc/os-release is
+# patched in place (VERSION_CODENAME=resolute and the deb/ubuntu fields are preserved)
+# rather than overwritten. Idempotent: sed expressions are anchored on the keys.
+set -eu
+
+OS_RELEASE=/etc/os-release
+LSB_RELEASE=/etc/lsb-release
+
+CODENAME=resolute
+PRETTY="Alpha OS"
+NAME="Alpha OS"
+ID=alphaos
+VERSION="26.04 (Alpha OS)"
+
+mkdir -p /etc/update-motd.d
+
+if [ ! -f "$OS_RELEASE" ]; then
+	echo "10-branding: $OS_RELEASE missing; leaving distro branding untouched" >&2
+else
+	# Determine the codename from the existing file so we never lose it.
+	if grep -q '^VERSION_CODENAME=' "$OS_RELEASE"; then
+		CODENAME=$(sed -n 's/^VERSION_CODENAME=//p' "$OS_RELEASE" | tr -d '"'"'"' ' | head -n1)
+		[ -n "$CODENAME" ] || CODENAME=resolute
+	else
+		echo "10-branding: warning: no VERSION_CODENAME in $OS_RELEASE, defaulting to $CODENAME" >&2
+	fi
+
+	# Build a sanitized drop-in and source it over the original, keeping the
+	# original only as a backup reference. We rewrite the well-known keys and let
+	# every other line survive untouched.
+	cp -f "$OS_RELEASE" "$OS_RELEASE.alphaos.orig" 2>/dev/null || true
+
+	set_key() {
+		key="$1"
+		value="$2"
+		grep -v "^${key}=" "$OS_RELEASE.alphaos.orig" > "$OS_RELEASE.tmp" 2>/dev/null || true
+		printf '%s=%s\n' "$key" "$value" >> "$OS_RELEASE.tmp"
+		cat "$OS_RELEASE.tmp" > "$OS_RELEASE"
+		rm -f "$OS_RELEASE.tmp"
+	}
+
+	set_key NAME "\"$NAME\""
+	set_key PRETTY_NAME "\"$PRETTY\""
+	set_key ID "$ID"
+	set_key ID_LIKE "\"ubuntu debian\""
+	set_key VERSION "\"$VERSION\""
+	set_key VERSION_ID "26.04"
+	set_key VERSION_CODENAME "$CODENAME"
+	set_key HOME_URL "https://alphaos.example/"
+	set_key SUPPORT_URL "https://alphaos.example/support"
+	set_key BUG_REPORT_URL "https://alphaos.example/bugs"
+	# Escape hatch for tools that want the real distribution.
+	set_key UBUNTU_CODENAME "$CODENAME"
+
+	chmod 0644 "$OS_RELEASE"
+
+	# Sanity check: a broken os-release breaks apt and dpkg.
+	# shellcheck disable=SC1090
+	if . "$OS_RELEASE" 2>/dev/null && [ "${VERSION_CODENAME:-}" = "$CODENAME" ] && [ "${ID:-}" = "$ID" ]; then
+		echo "10-branding: os-release ok (ID=$ID VERSION_CODENAME=$CODENAME)"
+	else
+		echo "10-branding: ERROR: os-release rewrite failed sanity check; restoring original" >&2
+		if [ -f "$OS_RELEASE.alphaos.orig" ]; then
+			cp -f "$OS_RELEASE.alphaos.orig" "$OS_RELEASE"
+		fi
+		exit 1
+	fi
+fi
+
+# /etc/lsb-release must stay in sync.
+cat > "$LSB_RELEASE" <<EOF
+DISTRIB_ID=$ID
+DISTRIB_RELEASE=26.04
+DISTRIB_CODENAME=$CODENAME
+DISTRIB_DESCRIPTION="$PRETTY 26.04 LTS"
+EOF
+chmod 0644 "$LSB_RELEASE"
+
+if command -v lsb_release >/dev/null 2>&1; then
+	if ! lsb_release -a >/dev/null 2>&1; then
+		echo "10-branding: warning: lsb_release cannot parse $LSB_RELEASE" >&2
+	fi
+fi
+
+# Login / network banners.
+cat > /etc/issue <<'EOF'
+Alpha OS 26.04 LTS \n \l
+EOF
+chmod 0644 /etc/issue
+
+cat > /etc/issue.net <<'EOF'
+Alpha OS 26.04 LTS \n \l
+EOF
+chmod 0644 /etc/issue.net
+
+# motd fragment (number < 99 so it runs late).
+cat > /etc/update-motd.d/99-alphaos <<'EOF'
+#!/bin/sh
+# Alpha OS branding fragment.
+printf '\n%s\n' "Alpha OS 26.04 LTS - GNOME, Cinnamon, Plasma and XFCE in one live image."
+printf '%s\n' "PipeWire audio, X11 and Wayland. Session help: /usr/share/alphaos/README.txt"
+EOF
+chmod 0755 /etc/update-motd.d/99-alphaos
+
+echo "10-branding: branding applied"
+exit 0

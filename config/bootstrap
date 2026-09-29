@@ -1,0 +1,25 @@
+# config/bootstrap -- Alpha OS
+# Archive areas pulled during debootstrap, and the parent mirrors from which
+# the binary stage derives the chroot/binary mirror URLs.
+#
+# NOTE: the unqualified --mirror-* flags are the correct ones in this version.
+# --mirrors-chroot / --mirrors-binary (plural) DO NOT EXIST here.
+
+# main/universe/multiverse as pulled into the empty base system.
+LB_ARCHIVE_AREAS="main restricted universe multiverse"
+
+# Primary archive; parent of the chroot and binary mirrors.
+LB_PARENT_MIRROR_BOOTSTRAP="http://archive.ubuntu.com/ubuntu/"
+
+# Security archive for the bootstrap stage.
+LB_PARENT_MIRROR_SECURITY="http://security.ubuntu.com/ubuntu"
+
+# Mirrors used by the chroot stage (sources.list.d in the built system).
+LB_MIRROR_CHROOT="http://archive.ubuntu.com/ubuntu/"
+
+# Mirrors used by the binary stage (package download from the host).
+LB_MIRROR_BINARY="http://archive.ubuntu.com/ubuntu/"
+
+# Security counterparts of the above two.
+LB_MIRROR_CHROOT_SECURITY="http://security.ubuntu.com/ubuntu"
+LB_MIRROR_BINARY_SECURITY="http://security.ubuntu.com/ubuntu"

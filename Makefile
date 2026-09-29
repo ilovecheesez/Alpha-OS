@@ -1,188 +1,220 @@
 # Alpha OS Makefile
-# Ubuntu 26.04 LTS (Resolute Raccoon) based distribution
-# Using live-build for ISO creation
-
+# Ubuntu 26.04 LTS ("resolute") live distribution built with live-build.
+#
 # ============================================================================
-# Configuration
+# Flow
+# ============================================================================
+#   make config   -> ./auto/config   -> lb config   (writes config/ + cache/)
+#   make build    -> ./auto/build    -> lb build    (needs root, makes the ISO)
+#   make iso/all  -> clean + config + build, then stage the ISO in output/
+#
+# The ISO is produced entirely by live-build. This Makefile never installs
+# packages on the build host, never copies the host's kernel into an image,
+# and never hand-writes a bootloader config. Output is either
+# binary.hybrid.iso (LB_BINARY_IMAGES=iso-hybrid, our default) or binary.iso;
+# the name is fixed by live-build, there is no --image-name option.
+#
+# ============================================================================
+# live-build version warning - READ THIS
+# ============================================================================
+# Ubuntu 26.04 ships live-build 3.0~a57-1ubuntu54, a 2012-era tree. Debian's
+# modern live-build is NOT API-compatible and must not be used instead. Two
+# consequences bite hard:
+#
+#   1. In "ubuntu" mode this version hard-codes the distribution to "precise".
+#      If --distribution is not passed, you silently build a 12.04 image
+#      instead of resolute. --distribution resolute is MANDATORY.
+#   2. --syslinux-theme live-build is MANDATORY; the default theme path does
+#      not exist in this tree and the binary stage aborts.
+#
+# Options such as --image-type, --hybrid-iso, --squashfs, --backports,
+# --hostname, --timezone and --output-directory do NOT exist in this version.
+# Do not add them.
 # ============================================================================
 
-# Ubuntu version
 UBUNTU_CODENAME := resolute
-UBUNTU_VERSION := 26.04
-KERNEL_VERSION := $(shell uname -r)
+UBUNTU_VERSION  := 26.04
 
-# Project
-PROJECT := AlphaOS
+PROJECT         := Alpha OS
 PROJECT_VERSION := 1.0.0
-PROJECT_ARCH := $(shell dpkg --print-architecture 2>/dev/null || echo amd64)
-PROJECT_DATE := $(shell date +%Y%m%d)
 
-# Directories
-LIVE_CONFIG_DIR := live/config
-PACKAGES_DIR := packages
-OUTPUT_DIR := output
-LIVE_IMAGE := live-image-amd64.hybrid.iso
-ISO_FILE := $(OUTPUT_DIR)/alpha-os-$(PROJECT_VERSION)-$(PROJECT_DATE).iso
+ISO_NAME    := alpha-os-$(PROJECT_VERSION)-$(shell date +%Y%m%d)
+OUTPUT_DIR  := output
+RELEASE_ISO := $(OUTPUT_DIR)/$(ISO_NAME).iso
 
-# ============================================================================
-# Main Targets
-# ============================================================================
+QEMU        ?= qemu-system-x86_64
+QEMU_MEM    ?= 4G
+OVMF_CODE   ?= /usr/share/OVMF/OVMF_CODE.fd
+OVMF_VARS   ?= /usr/share/OVMF/OVMF_VARS.fd
 
-.PHONY: all clean iso image run test help \
-        check-env live-config live-build \
-        clean-live clean-cache
+SHELL := /bin/bash
+
+.PHONY: all iso config build clean distclean check-env test run run-uefi help
 
 all: iso
-	@echo "============================================"
-	@echo "$(PROJECT) $(PROJECT_VERSION) build complete!"
-	@echo "============================================"
-	@echo "ISO: $(ISO_FILE)"
-	@echo ""
-	@echo "Desktop Environments Included:"
-	@echo "  - GNOME  (ubuntu-desktop)"
-	@echo "  - Cinnamon (ubuntucinnamon-desktop)"
-	@echo "  - KDE Plasma (kubuntu-desktop)"
-	@echo "  - XFCE (xubuntu-desktop)"
 
-help:
-	@echo "$(PROJECT) Build System"
-	@echo "===================="
-	@echo ""
-	@echo "Build targets:"
-	@echo "  all              - Build everything (creates ISO)"
-	@echo "  iso              - Create bootable ISO using live-build"
-	@echo "  live-config      - Configure live-build only"
-	@echo "  live-build       - Build ISO with live-build (after config)"
-	@echo "  check-env        - Check build environment"
-	@echo ""
-	@echo "Utility targets:"
-	@echo "  clean            - Remove build artifacts"
-	@echo "  clean-all        - Remove all generated files and live-build cache"
-	@echo "  clean-live       - Clean live-build state"
-	@echo "  clean-cache      - Clean apt cache inside chroot"
+# ---------------------------------------------------------------------------
+# Build
+# ---------------------------------------------------------------------------
 
-# ============================================================================
-# Environment Check
-# ============================================================================
-
-check-env:
-	@echo "============================================"
-	@echo "$(PROJECT) Environment Check"
-	@echo "============================================"
-	@echo ""
-	@echo "Build date: $(PROJECT_DATE)"
-	@echo "Ubuntu version: $(UBUNTU_VERSION) LTS (codename: $(UBUNTU_CODENAME))"
-	@echo "Linux kernel: $(KERNEL_VERSION)"
-	@echo "Architecture: $(PROJECT_ARCH)"
-	@echo ""
-	@echo "Checking tools..."
-	@command -v lb >/dev/null 2>&1 && echo "  [OK] live-build" || echo "  [WARN] live-build not found (install: sudo apt-get install live-build)"
-	@command -v xorriso >/dev/null 2>&1 && echo "  [OK] xorriso" || echo "  [WARN] xorriso not found"
-	@command -v mksquashfs >/dev/null 2>&1 && echo "  [OK] mksquashfs" || echo "  [WARN] mksquashfs not found"
-	@command -v qemu-system-x86_64 >/dev/null 2>&1 && echo "  [OK] QEMU x86_64" || echo "  [WARN] QEMU x86_64 not found"
-	@command -v qemu-system-aarch64 >/dev/null 2>&1 && echo "  [OK] QEMU ARM64" || echo "  [WARN] QEMU ARM64 not found"
-	@echo ""
-	@echo "Live-build config:"
-	@if [ -d "$(LIVE_CONFIG_DIR)" ]; then echo "  [OK] live-build configured"; else echo "  [WARN] live-build not configured"; fi
-	@echo ""
-	@echo "To configure live-build: make live-config"
-
-# ============================================================================
-# Live-build Targets
-# ============================================================================
-
-live-config: clean-live
-	@echo "============================================"
-	@echo "Configuring live-build for Alpha OS"
-	@echo "============================================"
-	@./scripts/build-iso.sh config-only
-
-live-build: live-config
-	@echo "============================================"
-	@echo "Building Alpha OS ISO with live-build"
-	@echo "============================================"
-	@if [ "$(USER)" != "root" ]; then \
-		echo "Building as root (required for live-build)..."; \
-		sudo lb build; \
-	else \
-		lb build; \
-	fi
-	@if [ -f "$(LIVE_IMAGE)" ]; then \
-		mkdir -p "$(OUTPUT_DIR)"; \
-		cp "$(LIVE_IMAGE)" "$(ISO_FILE)"; \
-		echo ""; \
-		echo "ISO created successfully: $(ISO_FILE)"; \
-		echo "Size: $$(du -h "$(ISO_FILE)" | cut -f1)"; \
-	else \
-		echo "[ERROR] ISO build failed"; \
+# `lb build` mounts and populates a chroot: it must run as root.
+iso:
+	@echo "============================================================"
+	@echo " $(PROJECT) $(PROJECT_VERSION) - full live-build run"
+	@echo " Ubuntu $(UBUNTU_VERSION) ($(UBUNTU_CODENAME))"
+	@echo " NOTE: this target requires root (lb build mounts a chroot)."
+	@echo "============================================================"
+	@if [ "$$(id -u)" -ne 0 ]; then \
+		echo "error: 'make iso' must run as root. Try: sudo make iso" >&2; \
+		echo "       (the build host is not modified: no packages are" >&2; \
+		echo "        installed and no host kernel is copied)." >&2; \
 		exit 1; \
 	fi
+	@./scripts/build-iso.sh all
 
-iso: live-build
+config:
+	@echo "[config] ./auto/config (lb config)"
+	@./scripts/build-iso.sh config
 
-# ============================================================================
-# Testing
-# ============================================================================
+build:
+	@echo "[build] ./auto/build (lb build)"
+	@if [ "$$(id -u)" -ne 0 ]; then \
+		echo "error: 'make build' must run as root. Try: sudo make build" >&2; \
+		exit 1; \
+	fi
+	@./scripts/build-iso.sh build
 
-run: iso
-	@echo "[RUN] Starting Alpha OS in QEMU (GUI)..."
-	@qemu-system-x86_64 \
-		-m 4G \
-		-cpu host \
-		-smp $$(nproc) \
-		-drive if=none,id=hd0,format=raw,file="$(ISO_FILE)" \
-		-device virtio-blk-device,drive=hd0 \
-		-device qemu-xhci \
-		-device usb-kbd \
-		-device usb-tablet \
-		-vga virtio \
-		-display sdl \
-		-audiodev pa,id=audio0 \
-		-device intel-hda \
-		-device hda-duplex,audiodev=audio0 \
-		-netdev user,id=net0 \
-		-device virtio-net-device,netdev=net0 \
-		-boot d
-
-run-headless: iso
-	@echo "[RUN] Starting Alpha OS in QEMU (headless)..."
-	@qemu-system-x86_64 \
-		-m 2G \
-		-cpu host \
-		-smp $$(nproc) \
-		-drive if=none,id=hd0,format=raw,file="$(ISO_FILE)" \
-		-device virtio-blk-device,drive=hd0 \
-		-nographic \
-		-boot d
-
-test: iso
-	@echo "[TEST] Running Alpha OS tests..."
-	@./scripts/run-tests.sh
-	@echo "Tests completed."
-
-# ============================================================================
+# ---------------------------------------------------------------------------
 # Clean
-# ============================================================================
+# ---------------------------------------------------------------------------
 
 clean:
-	@echo "[CLEAN] Removing build artifacts..."
+	@echo "[clean] ./auto/clean (lb clean)"
+	@if [ -x ./auto/clean ]; then \
+		sudo ./auto/clean 2>/dev/null || ./auto/clean 2>/dev/null || \
+			echo "  (skipped: needs root)"; \
+	else \
+		echo "  ./auto/clean not present, nothing to clean"; \
+	fi
+	@rm -f binary.hybrid.iso binary.iso
+
+distclean: clean
+	@echo "[distclean] removing $(OUTPUT_DIR)/ and the live-build cache/"
 	@rm -rf "$(OUTPUT_DIR)"
-	@rm -f alpha-os-*.iso alpha-os-*.img
+	@rm -rf cache chroot config.new .build
 
-clean-live:
-	@echo "[CLEAN] Cleaning live-build state..."
-	@lb clean
+# ---------------------------------------------------------------------------
+# Environment check - diagnostic only, NEVER exits non-zero
+# ---------------------------------------------------------------------------
 
-clean-cache:
-	@echo "[CLEAN] Cleaning chroot apt cache..."
-	@lb clean --cache
+check-env:
+	@echo "============================================================"
+	@echo " $(PROJECT) environment check (diagnostic only)"
+	@echo "============================================================"
+	@echo " expected live-build: 3.0~a57-1ubuntu54 (Ubuntu's 2012 tree)"
+	@echo ""
+	@for t in lb xorriso syslinux debootstrap mksquashfs sudo curl dosfstools \
+	          grub-pc-bin grub-efi-amd64-bin shim-signed librsvg2-bin; do \
+		if command -v $$t >/dev/null 2>&1; then \
+			echo "  [OK]   $$t"; \
+		elif [ -e "/usr/lib/grub/$$t" ] || [ -e "/usr/share/$$t" ]; then \
+			echo "  [OK]   $$t (present, not on PATH)"; \
+		else \
+			echo "  [MISS] $$t"; \
+		fi; \
+	done
+	@echo ""
+	@for d in config auto scripts; do \
+		if [ -d "$$d" ]; then echo "  [OK]   $$d/"; else echo "  [MISS] $$d/"; fi; \
+	done
+	@echo ""
+	@if [ ! -e packages ] && [ -d config/package-lists ]; then \
+		echo "  [OK]   package lists in config/package-lists/ (correct)"; \
+	else \
+		echo "  [WARN] package lists not in config/package-lists/"; \
+	fi
+	@echo ""
+	@echo "Missing tools are reported above; this target never fails."
+	@exit 0
 
-clean-all: clean clean-live clean-cache
-	@echo "[DISTCLEAN] Removing all generated files..."
-	@rm -rf live
-	@rm -f $(LIVE_IMAGE)
-	@rm -f alpha-os-*.iso alpha-os-*.img
+# ---------------------------------------------------------------------------
+# Tests
+# ---------------------------------------------------------------------------
 
-.PHONY: all clean iso image run test help \
-        check-env live-config live-build \
-        clean-live clean-cache
+# Static validation: no live-build, no ISO build, no root.
+test:
+	@./scripts/run-tests.sh
+
+# ---------------------------------------------------------------------------
+# Run
+# ---------------------------------------------------------------------------
+
+run: iso
+	@echo "[run] booting $(RELEASE_ISO) in QEMU (BIOS)"
+	@$(QEMU) \
+		-m $(QEMU_MEM) \
+		-smp $$(nproc) \
+		-drive file=$(RELEASE_ISO),media=cdrom,readonly=on \
+		-device virtio-net-device,netdev=net0 \
+		-netdev user,id=net0 \
+		-boot d \
+		-display gtk,show-cursor=on || \
+	$(QEMU) -m $(QEMU_MEM) -smp $$(nproc) \
+		-drive file=$(RELEASE_ISO),media=cdrom,readonly=on \
+		-boot d -display sdl
+
+run-uefi: iso
+	@if [ ! -f "$(OVMF_CODE)" ]; then \
+		echo "OVMF firmware not found at $(OVMF_CODE)."; \
+		echo "Install it with: sudo apt-get install ovmf"; \
+		echo "Then re-run: make run-uefi"; \
+		echo "(BIOS boot still works via: make run)"; \
+		exit 0; \
+	fi
+	@echo "[run-uefi] booting $(RELEASE_ISO) under OVMF (UEFI)"
+	@$(QEMU) \
+		-m $(QEMU_MEM) \
+		-smp $$(nproc) \
+		-drive if=pflash,format=raw,readonly=on,file=$(OVMF_CODE) \
+		-drive if=pflash,format=raw,file=$(OVMF_VARS) \
+		-drive file=$(RELEASE_ISO),media=cdrom,readonly=on \
+		-boot d \
+		-display gtk,show-cursor=on || \
+	$(QEMU) -m $(QEMU_MEM) -smp $$(nproc) \
+		-drive if=pflash,format=raw,readonly=on,file=$(OVMF_CODE) \
+		-drive if=pflash,format=raw,file=$(OVMF_VARS) \
+		-drive file=$(RELEASE_ISO),media=cdrom,readonly=on \
+		-boot d -display sdl
+
+# ---------------------------------------------------------------------------
+# Help
+# ---------------------------------------------------------------------------
+
+help:
+	@echo "$(PROJECT) $(PROJECT_VERSION) - Ubuntu $(UBUNTU_VERSION) ($(UBUNTU_CODENAME)) live distro"
+	@echo "built with live-build 3.0~a57-1ubuntu54 (2012-era tree)."
+	@echo ""
+	@echo "Build:"
+	@echo "  iso            clean + config + build, stage ISO in $(OUTPUT_DIR)/  (requires root)"
+	@echo "  all            alias for iso"
+	@echo "  config         ./auto/config only (lb config)"
+	@echo "  build          ./auto/build only  (lb build, requires root)"
+	@echo ""
+	@echo "Maintenance:"
+	@echo "  check-env      report missing build tools (never fails)"
+	@echo "  test           static validation suite (no build, no root)"
+	@echo "  clean          ./auto/clean + remove generated ISOs"
+	@echo "  distclean      clean + remove $(OUTPUT_DIR)/ and the live-build cache"
+	@echo ""
+	@echo "Run:"
+	@echo "  run            boot $(RELEASE_ISO) in QEMU (BIOS)"
+	@echo "  run-uefi       boot the same ISO under OVMF, if firmware is present"
+	@echo ""
+	@echo "Traps (do not 'fix' these):"
+	@echo "  - --distribution resolute is mandatory; without it live-build"
+	@echo "    silently builds a 12.04 (precise) image."
+	@echo "  - --syslinux-theme live-build is mandatory."
+	@echo "  - This live-build has no --image-type/--hybrid-iso/--squashfs/"
+	@echo "    --backports/--hostname/--timezone/--output-directory options."
+	@echo "  - Output is always binary.hybrid.iso or binary.iso."
+	@echo "  - UEFI also needs a hand-built boot/grub/efi.img; BIOS does not."

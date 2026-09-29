@@ -1,0 +1,177 @@
+name: Build ISO
+
+# Alpha OS is a full Ubuntu 26.04 LTS (resolute) system with four desktops
+# (GNOME, Cinnamon, Plasma, XFCE) in one image. `lb build` debootstraps a
+# complete root filesystem, so this job is large and slow: expect well over an
+# hour and a multi-GB ISO. That is why it is not part of the fast CI job and
+# why the timeout below is generous but finite.
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish a GitHub Release from this build
+        type: boolean
+        default: false
+      series:
+        description: Base Ubuntu series
+        type: choice
+        options: [ resolute ]
+        default: resolute
+  schedule:
+    - cron: '34 3 * * *'
+  push:
+    tags: [ 'v*' ]
+  workflow_call:
+    inputs:
+      publish:
+        type: boolean
+        default: false
+      series:
+        type: string
+        default: resolute
+      release_tag:
+        type: string
+        default: ''
+      expected_version:
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-iso-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build and smoke-test ISO
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cross-check tag version against repo version
+        if: inputs.expected_version != ''
+        run: |
+          set -euo pipefail
+          repo_version=$(sed -n 's/^PROJECT_VERSION[[:space:]]*[:?]*=[[:space:]]*//p' Makefile | head -1)
+          tag_version="${RELEASE_TAG#v}"
+          if [ -z "$repo_version" ] || [ "$repo_version" != "$tag_version" ]; then
+            echo "FAIL: tag $RELEASE_TAG version '$tag_version' != Makefile PROJECT_VERSION '$repo_version'" >&2
+            exit 1
+          fi
+          echo "OK: tag version matches repo version ($repo_version)"
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+
+      - name: Install build dependencies
+        run: |
+          set -euo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get update -qq
+          # Keep in sync with `make check-env` and scripts/build-iso.sh.
+          # live-build is the Ubuntu (2012-era, 3.0~a57-1ubuntu54) package;
+          # do NOT add a Debian apt repo for it.
+          sudo apt-get install -y -qq --no-install-recommends \
+            live-build debootstrap xorriso syslinux mtools dosfstools \
+            squashfs-tools grub-pc-bin grub-efi-amd64-bin grub-efi-amd64-signed \
+            shim-signed librsvg2-bin ca-certificates ubuntu-keyring \
+            qemu-utils curl
+          lb --version || true
+          make check-env
+
+      - name: Configure live-build
+        run: make live-config
+
+      - name: Assert generated config targets ${{ inputs.series }}
+        run: |
+          set -euo pipefail
+          for f in config/common live/config; do
+            [ -f "$f" ] || continue
+            if ! grep -Eq "resolute|\${{ inputs.series }}" "$f"; then
+              echo "FAIL: $f does not target ${{ inputs.series }}" >&2
+              exit 1
+            fi
+          done
+          echo "OK: configuration targets ${{ inputs.series }}"
+
+      - name: Build ISO (requires root)
+        run: make live-build
+
+      - name: Smoke-test the produced ISO
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          isos=(binary.hybrid.iso binary.iso output/alpha-os-*.iso)
+          found=()
+          for c in "${isos[@]}"; do
+            [ -f "$c" ] && found+=("$c")
+          done
+          if [ ${#found[@]} -eq 0 ]; then
+            echo "FAIL: no ISO produced (expected binary.hybrid.iso, binary.iso or output/alpha-os-*.iso)" >&2
+            exit 1
+          fi
+          iso="${found[0]}"
+          # A 4-desktop Ubuntu image cannot plausibly be under ~200 MiB.
+          min_bytes=$((200 * 1024 * 1024))
+          size=$(stat -c %s "$iso")
+          if [ "$size" -lt "$min_bytes" ]; then
+            echo "FAIL: $iso is only $size bytes; implausibly small for a 4-desktop Ubuntu image" >&2
+            exit 1
+          fi
+          echo "== El Torito boot report for $iso =="
+          xorriso -indev "$iso" -report_el_torito as_mkisofs
+          if ! xorriso -indev "$iso" -report_el_torito as_mkisofs 2>&1 | grep -qi 'boot'; then
+            echo "FAIL: no El Torito boot record found in $iso" >&2
+            exit 1
+          fi
+          echo "== artifact =="
+          ls -lh "$iso"
+          sha256sum "$iso" | tee SHA256SUMS
+          cp "$iso" output/ 2>/dev/null || true
+
+      - name: Upload ISO artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpha-os-iso-${{ github.run_id }}
+          path: |
+            output/*.iso
+            binary.hybrid.iso
+            binary.iso
+            SHA256SUMS
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish GitHub Release
+        if: >-
+          (inputs.publish || startsWith(github.ref, 'refs/tags/v')) && github.event_name != 'schedule'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release_tag != '' && inputs.release_tag || github.ref_name }}
+          name: Alpha OS ${{ inputs.release_tag != '' && inputs.release_tag || github.ref_name }}
+          fail_on_unmatched_files: true
+          files: |
+            output/*.iso
+            SHA256SUMS
+          body: |
+            Alpha OS live image.
+
+            * Base: Ubuntu 26.04 LTS (resolute), kernel 7.0
+            * Boot: BIOS (syslinux / GRUB). UEFI requires a hand-built
+              `boot/grub/efi.img` provided by a `*.binary` hook, which does not
+              exist yet — the image is not UEFI-bootable out of the box.
+            * Four desktops in one image: GNOME, Cinnamon, Plasma, XFCE.
+            * Displays: X11 (live/default) and Wayland (experimental) sessions.
+            * Verified checksum in `SHA256SUMS`.

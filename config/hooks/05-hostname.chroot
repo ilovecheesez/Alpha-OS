@@ -1,0 +1,31 @@
+#!/bin/bash
+# Alpha OS - set the hostname.
+#
+# live-build 3.0~a57 (Ubuntu 26.04) has no LB_HOSTNAME support; lb_chroot_hostname
+# hard-codes "localhost.localdomain", so the real hostname MUST be set here and via
+# config/includes.chroot. Idempotent: files are fully rewritten each run.
+set -eu
+
+HOSTNAME_VALUE=alphaos
+
+if [ ! -d /etc ]; then
+	echo "05-hostname: /etc missing, aborting" >&2
+	exit 1
+fi
+
+cat > /etc/hostname <<'EOF'
+alphaos
+EOF
+
+cat > /etc/hosts <<'EOF'
+127.0.0.1	localhost
+127.0.1.1	alphaos
+127.0.1.1	alphaos.localdomain
+
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+EOF
+
+echo "05-hostname: hostname set to alphaos"
+exit 0

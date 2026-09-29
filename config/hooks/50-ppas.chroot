@@ -1,0 +1,82 @@
+#!/bin/bash
+# Alpha OS - optional third-party PPAs.
+#
+# POLICY: the ISO MUST build with zero PPAs. A PPA must never be able to break
+# apt state, the package install, or `--debian-installer live`. Therefore every
+# operation here is fail-soft: no `set -e` aborts on a dead, moved, or
+# non-"resolute" PPA.
+#
+# NOTE: every PPA below is UNVERIFIED against 26.04 "resolute". They are treated
+# as best-effort extras only.
+#
+# Override without editing this hook:
+#   * build-time:  ALPHAOS_PPAS="ppa:foo/bar ppa:baz/qux" lb_config ...
+#   * image-side:  drop /etc/alphaos/ppas.d/*.list before this hook runs.
+# Idempotent: a PPA already listed in sources.list.d is not re-added.
+set -eu
+
+log() { echo "50-ppas: $*"; }
+
+if ! command -v add-apt-repository >/dev/null 2>&1; then
+	log "add-apt-repository unavailable; skipping PPAs"
+	exit 0
+fi
+
+# --- 1. Collect the list ----------------------------------------------------
+# Each candidate is UNVERIFIED for 26.04 / resolute.
+DEFAULT_PPAS="
+ppa:kubuntu-ppa/backports
+ppa:kubuntu-ppa/ppa
+ppa:ubuntu-desktop/ppa
+ppa:cinnamon-team/ppa
+ppa:xfce-gooders/ppa
+ppa:pipewire-debian/pipewire-upstream
+"
+
+PPAS="${ALPHAOS_PPAS:-$DEFAULT_PPAS}"
+
+# Image-side override file(s).
+EXTRA=""
+if [ -d /etc/alphaos/ppas.d ]; then
+	EXTRA=$(cat /etc/alphaos/ppas.d/*.list 2>/dev/null || true)
+fi
+[ -n "$EXTRA" ] && PPAS="$PPAS $EXTRA"
+
+log "candidate PPAs: $(echo "$PPAS" | tr '\n' ' ')"
+
+# --- 2. Refresh the existing sources without risking the build --------------
+# Guarded: a mirror hiccup here must not abort the build. `|| true` on purpose,
+# because a failed update leaves a stale but non-empty lists/ dir, which apt
+# tolerates; aborting would fail the build for a purely optional feature.
+apt-get update -o Acquire::Retries=3 -o APT::Update::Error-Mode=any >/dev/null 2>&1 || \
+	log "warning: initial apt-get update failed; continuing (fail-soft by design)"
+
+# --- 3. Add each PPA fail-softly --------------------------------------------
+added=0
+for ppa in $PPAS; do
+	[ -n "$ppa" ] || continue
+	if grep -rqF "$ppa" /etc/apt/sources.list /etc/apt/sources.list.d 2>/dev/null; then
+		log "already present, skipping: $ppa"
+		continue
+	fi
+	log "trying: $ppa"
+	if add-apt-repository -y "$ppa" >/dev/null 2>&1; then
+		log "added: $ppa"
+		added=$((added + 1))
+	else
+		log "warn: could not add $ppa (dead, moved, or no resolute suite) - continuing"
+	fi
+done
+
+# --- 4. Refresh only if something was added ---------------------------------
+if [ "$added" -gt 0 ]; then
+	# Again guarded: optional PPAs are not worth failing a build over.
+	apt-get update -o Acquire::Retries=3 -o APT::Update::Error-Mode=any >/dev/null 2>&1 || \
+		log "warn: post-PPA apt-get update failed; sources left in place, not fatal"
+fi
+
+# Keep 60-cleanup.chroot from shipping stale apt metadata.
+rm -f /var/lib/apt/lists/*partial* 2>/dev/null || true
+
+log "done ($added added)"
+exit 0

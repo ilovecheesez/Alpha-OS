@@ -1,0 +1,47 @@
+# Alpha OS — PipeWire audio stack — Ubuntu 26.04 LTS (resolute)
+# Provenance: names verified as exact matches against the resolute
+# binary-amd64 Packages indexes on archive.ubuntu.com (released 23 Apr 2026).
+#
+# Signal chain:
+#   applications -> libpulse (libpulse0, libpulse0t64 in universe runtime) ->
+#   pipewire-pulse (PulseAudio protocol shim) -> PipeWire (pipewire) ->
+#   ALSA (pipewire-alsa) / JACK (pipewire-jack), policy by WirePlumber.
+#
+# The standalone `pulseaudio` daemon IS installed (so legacy tools and
+# pavucontrol work identically), but it is MASKED by a chroot hook so it can
+# never race pipewire-pulse for the sound devices. Do not remove it here.
+#
+# NOTE: the `*-alsa` / `*-jack` PulseAudio module packages (pulseaudio-alsa,
+# pulseaudio-jack) do not exist in resolute; `pulseaudio-module-jack` is the
+# supported substitute. `pipewire-audio-client-modules` does not exist; use
+# `pipewire-audio-client-libraries`.
+
+pipewire
+pipewire-bin
+pipewire-pulse
+pipewire-alsa
+pipewire-jack
+wireplumber
+libspa-0.2-modules
+libspa-0.2-modules-extra
+pipewire-audio-client-libraries
+pulseaudio
+pulseaudio-utils
+pulseaudio-module-bluetooth
+pulseaudio-module-jack
+libpulse0
+pavucontrol
+pavucontrol-qt
+paprefs
+jackd2
+bluez
+bluez-tools
+blueman
+gstreamer1.0-plugins-base
+gstreamer1.0-plugins-good
+gstreamer1.0-plugins-bad
+gstreamer1.0-plugins-ugly
+gstreamer1.0-libav
+ffmpeg
+audacious
+audacious-plugins

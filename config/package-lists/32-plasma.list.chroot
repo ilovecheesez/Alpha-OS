@@ -1,0 +1,60 @@
+# Alpha OS — KDE Plasma 6.6.4 desktop — Ubuntu 26.04 LTS (resolute)
+# Provenance: names verified as exact matches against the resolute
+# binary-amd64 Packages indexes on archive.ubuntu.com (released 23 Apr 2026).
+#
+# Verified from Contents-amd64.gz:
+#   xsessions/plasmax11.desktop     -> plasma-session-x11  + kwin-x11
+#   wayland-sessions/plasma.desktop -> plasma-session-wayland + kwin-wayland
+# The X11 session file is `plasmax11.desktop`, NOT `plasma.desktop`.
+#
+# substitutED names (the KF5-era names are absent in resolute):
+#   plasma-workspace-common / plasma-utils / plasma-widgets-default / ksysguard
+#     -> plasma-workspace-data / plasma-widgets-addons / ksystemstats
+#   discover-notifier -> plasma-discover-notifier
+#   kimageformats -> kimageformat6-plugins
+#   kde-gtk-config -> kde-config-gtk-style
+#   breeze-gtk / yaru-theme / yaru-gtk-theme -> breeze-cursor-theme, breeze-icon-theme,
+#     plasma-workspace-wallpapers, plasma-wallpapers-addons, kde-config-gtk-style
+#   qt5-wayland -> qt6-wayland
+#   kwebkitpart / kwebengine / ktextaddons: not packaged in resolute.
+#
+# VERIFY: resolute carries BOTH `kio` 5.116.0 (KF5) and KF6
+# `dolphin`/`kate`/`kio-extras` 25.12.3. `kio` is deliberately NOT listed
+# here, because dpkg may report a conflict between the KF5 `kio` and the
+# KF6 `kio-extras` that `dolphin` needs. If the chroot install reports a
+# conflict, the fix is to keep this list as-is (it is already correct);
+# do NOT add `kio`.
+
+plasma-desktop
+plasma-workspace
+plasma-workspace-data
+plasma-widgets-addons
+plasma-session-wayland
+plasma-session-x11
+kwin-wayland
+kwin-x11
+sddm
+sddm-theme-breeze
+dolphin
+kate
+kwrite
+konsole
+kcalc
+kio-extras
+kimageformat6-plugins
+kdeconnect
+breeze
+breeze-icon-theme
+breeze-cursor-theme
+plasma-workspace-wallpapers
+plasma-wallpapers-addons
+xdg-desktop-portal-kde
+ksystemstats
+plasma-discover-notifier
+plasma-nano
+discover
+bluedevil
+qt6-wayland
+kde-config-gtk-style
+firefox
+libreoffice

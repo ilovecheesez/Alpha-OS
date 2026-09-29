@@ -1,0 +1,88 @@
+# config/common -- Alpha OS
+# Generated for live-build 3.0~a57-1ubuntu54 (Ubuntu 26.04).
+# NOT compatible with Debian's modern live-build.
+
+# Must stay < 4 or Check_defaults aborts the run.
+LB_CONFIG_VERSION="3.0~a57"
+
+# ubuntu mode; note that --mode ubuntu hard-codes LB_DISTRIBUTION=precise in
+# functions/defaults.sh, so the distribution is pinned explicitly below.
+LB_MODE="ubuntu"
+
+# Full system image (as opposed to e.g. a netboot installer run).
+LB_SYSTEM="live"
+
+# 26.04 LTS.  Pinned explicitly because the ubuntu mode default is wrong.
+LB_DISTRIBUTION="resolute"
+
+LB_ARCHITECTURES="amd64"
+
+# apt is the only supported solver in this version.
+LB_APT="apt"
+
+# Keep the image lean; component packages are listed individually.
+LB_APT_RECOMMENDS="false"
+
+# Enable apt security handling (security.ubuntu.com archives).
+LB_APT_SECURE="true"
+
+# Do not restrict the apt sources to the build architecture.
+LB_APT_SOURCE_ARCHIVES="false"
+
+# debootstrap provides the base system.
+LB_BOOTSTRAP="debootstrap"
+
+# Keep downloaded .debs in cache/ to speed up rebuilds.
+LB_CACHE="true"
+
+# casper; resolves to casper in ubuntu mode (casper 26.04.2 in resolute main).
+LB_INITRAMFS="auto"
+
+# gzip: casper ships gzip support; lz4/zstd are not guaranteed present.
+LB_INITRAMFS_COMPRESSION="gzip"
+
+LB_INITSYSTEM="systemd"
+
+# Fully scripted chroot; never prompt.
+LB_DEBCONF_FRONTEND="noninteractive"
+LB_DEBCONF_PRIORITY="critical"
+
+# apt task selection (ubuntu-desktop-minimal and friends).
+LB_TASKSEL="apt"
+
+# Build without fakeroot; the build is run as root.
+LB_USE_FAKEROOT="false"
+
+# Applied when the squashfs/initramfs is gzipped.
+GZIP_OPTIONS="--6 --rsyncable"
+
+# ---------------------------------------------------------------------------
+# UEFI / hybrid ISO
+#
+# NOTE: this live-build version has no built-in BIOS+UEFI hybrid path.  The
+# isohybrid call only produces a BIOS-hybrid image.  Per LP #1864426 UEFI
+# bootability requires the two variables below PLUS a hand-built
+# boot/grub/efi.img produced by a *.binary hook.  That hook is NOT written yet,
+# so the tree as it stands is BIOS-bootable only.
+#
+# --isohybrid-options cannot be used for this: lb_config:651 assigns
+# LB_ISOHYBRID_OPTIONS but emits a bare ISOHYBRID_OPTIONS="${ISOHYBRID_OPTIONS}"
+# into this file, so the value is silently lost.  lb_binary_iso reads exactly
+# the name ISOHYBRID_OPTIONS, so it is set by hand here -- and auto/config
+# re-applies it after `lb config` overwrites this file with `cat >`.
+# ---------------------------------------------------------------------------
+ISOHYBRID_OPTIONS="--uefi"
+
+# Ubuntu patch (LP #1864426); this one DOES work from `lb config` and is read
+# from this file by lb_binary_iso.  Re-applied by auto/config as well.
+GENISOIMAGE_OPTIONS_EXTRA="-eltorito-alt-boot -efi-boot boot/grub/efi.img -no-emul-boot -joliet-long"
+
+# ---------------------------------------------------------------------------
+# There is NO LB_HOSTNAME variable in live-build 3.0~a57, so lb_chroot_hostname
+# hard-codes "localhost.localdomain".  The hostname for Alpha OS is therefore
+# set at build time by ./config/hooks/05-hostname.chroot (see that hook).
+# Likewise there is no LB_USERNAME / LB_FULLNAME / LB_DOMAIN / LB_TIMEZONE,
+# no LB_PACKAGES_LIST* (config/package-lists/ is globbed), no LB_LINUX_INSTALL,
+# no LB_NONFREE, no LB_SECURITY_UPDATE, no LB_SOURCE_MIRROR, no LB_SYSINUX_MENU
+# and no LB_GZIP in this version.  Do not invent them.
+# ---------------------------------------------------------------------------

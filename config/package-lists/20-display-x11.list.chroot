@@ -1,0 +1,35 @@
+# Alpha OS — X11 display server — Ubuntu 26.04 LTS (resolute)
+# Provenance: names verified as exact matches against the resolute
+# binary-amd64 Packages indexes on archive.ubuntu.com (released 23 Apr 2026).
+#
+# Alpha OS is dual-stack: this file provides the Xorg server used by the
+# Cinnamon, Plasma (plasmax11.desktop) and XFCE (xfce.desktop) sessions, and
+# by XWayland for the GNOME/Plasma Wayland sessions.
+# `librsvg2-bin` is required by the `live-build` syslinux boot theme.
+# Note `libgl1-mesa-glx` is gone in resolute; `libglvnd` + `libglx-mesa0`
+# cover it.
+
+xorg
+xserver-xorg
+xserver-xorg-core
+xserver-xorg-video-all
+xserver-xorg-input-all
+xserver-xorg-input-libinput
+xserver-xorg-input-evdev
+xserver-xorg-input-synaptics
+x11-utils
+x11-apps
+x11-xserver-utils
+x11-session-utils
+xinit
+xauth
+xfonts-base
+xfonts-100dpi
+xfonts-75dpi
+xfonts-terminus
+xfonts-utils
+xwayland
+libgl1-mesa-dri
+libglx-mesa0
+dbus-x11
+librsvg2-bin

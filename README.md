@@ -1,241 +1,242 @@
 # Alpha OS
 
-**Ubuntu-Based Operating System with Multi-Desktop Support**
+An Ubuntu 26.04 LTS (codename `resolute`) derivative that ships four desktop
+environments — GNOME, Cinnamon, KDE Plasma and XFCE — on one live ISO, together
+with a PipeWire-based audio stack and both X11 and Wayland support.
 
-![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Platform](https://img.shields.io/badge/platform-AMD64%20%7C%20ARM64-blue)
-![Ubuntu](https://img.shields.io/badge/Ubuntu-26.04%20LTS%20(Resolute%20Raccoon)-orange)
-![License](https://img.shields.io/badge/license-MIT-green)
+Alpha OS was formerly known as **Vib-OS**. See
+[Migration history](docs/ARCHITECTURE.md#vib-os---alpha-os-migration).
 
-```
-        _  _         ___  ____ 
- __   _(_)| |__     / _ \/ ___| 
- \ \ / / || '_ \   | | | \___ \ 
-  \ V /| || |_) |  | |_| |___) |
-   \_/ |_||_.__/    \___/|____/ 
-```
+> **Status: in development.** There is no release, no download page and no
+> website. Nothing in this repository has produced a verified bootable ISO on
+> hardware. Read [Current tree status](#current-tree-status) before you build.
 
-Alpha OS v1.0.0 - Ubuntu-Based Multi-Desktop Distribution
+The build tree is **complete**: `config/`, `auto/` and `scripts/` are all
+present and `make test` (static validation) passes. What has *not* happened is
+an actual ISO build — see [Current tree status](#current-tree-status).
 
-<p align="center">
-  <img src="screenshots/main.png" alt="Alpha OS Desktop" width="800">
-</p>
+## What Alpha OS is
 
-## Overview
+* A **live image builder**, not a distribution. Alpha OS produces an ISO; it does
+  not maintain its own package archive, its own kernel, or its own root
+  filesystem.
+* Base: **Ubuntu 26.04 LTS "resolute"**, kernel `linux-generic 7.0.0-14.14`.
+* Architecture: **amd64 only.** No arm64 configuration is wired up. The old
+  README claimed ARM64 (Raspberry Pi 5, Apple Silicon) — that claim was
+  inherited from Vib-OS and is not true of the current build.
+* Hostname `alphaos`; live user `ubuntu`; LightDM autologins the live user.
+* Branding: `/etc/os-release` is rewritten to `NAME="Alpha OS"`, `ID=alphaos`,
+  with `ID_LIKE="ubuntu debian"` and `VERSION_CODENAME=resolute` preserved so
+  that `apt` and `dpkg` keep working normally.
 
-Alpha OS is an Ubuntu 26.04 LTS (Resolute Raccoon) based distribution that brings together four world-class desktop environments in a single, cohesive operating system. Built on the latest Ubuntu 26.04 with Linux kernel 7.0, Alpha OS features **GNOME**, **Cinnamon**, **KDE Plasma**, and **XFCE** desktop environments, each with full X11 and Wayland display server support.
+## Current tree status
 
-## 🎯 Supported Architectures
+| Component | State |
+|---|---|
+| `config/` (live-build config dir: `all`, `common`, `bootstrap`, `chroot`, `binary`) | Present |
+| `config/package-lists/` (10 `*.list.chroot`) | Present |
+| `config/hooks/` (9 hooks) | Present |
+| `config/includes.chroot/` | Present |
+| `auto/config`, `auto/build`, `auto/clean` | Present, executable |
+| `scripts/build-iso.sh`, `scripts/create-alphaos-iso.sh`, `scripts/run-tests.sh` | Present |
+| `Makefile` | Present; targets `iso`/`all`, `config`, `build`, `clean`, `distclean`, `check-env`, `test`, `run`, `run-uefi`, `help` |
+| `packages/*.list.chroot` (previous location) | Removed; `config/package-lists/` is the only list location |
+| `live/` | Does not exist; the build root is the repository root |
+| Vib-OS kernel, libc, bootloader, drivers, DOOM port | Removed — the migration is complete |
+| `docs/` | This documentation |
+| `LICENSE` | MIT |
 
-| Architecture | Status | Hardware |
-|--------------|--------|----------|
-| **AMD64 (x86_64)** | ✅ | Modern PCs, VirtualBox, VMware, Real Hardware |
-| **ARM64** | ✅ | Raspberry Pi 5, Apple Silicon (via UTM), QEMU virt |
-
-## 📸 Screenshots
-
-### GNOME Desktop
-![GNOME](screenshots/gnome.png)
-*Modern, touch-friendly GNOME desktop with Wayland support*
-
-### Cinnamon Desktop
-![Cinnamon](screenshots/cinnamon.png)
-*Traditional layout Cinnamon desktop with GNOME 2 aesthetics*
-
-### KDE Plasma Desktop
-![KDE](screenshots/plasma.png)
-*Feature-rich KDE Plasma 6 desktop with full hardware acceleration*
-
-### XFCE Desktop
-![XFCE](screenshots/xfce.png)
-*Lightweight XFCE 4.20 desktop for optimal performance*
-
-## 🛠 Desktop Environments
-
-Alpha OS includes all four major desktop environments, selectable at the login screen:
-
-### GNOME (Default)
-- **Package**: `ubuntu-desktop`
-- **Display Manager**: GDM3
-- **Display Server**: X11 + Wayland
-- **Features**: Modern UI, integrated services, touch optimizations
-- **Recommended**: 4GB RAM minimum, 25GB disk space
-
-### Cinnamon
-- **Package**: `ubuntucinnamon-desktop`
-- **Display Manager**: GDM3 or LightDM
-- **Display Server**: X11 + Wayland
-- **Features**: Traditional desktop layout, GNOME 2 compatibility, lightweight
-- **Recommended**: 2GB RAM minimum, 20GB disk space
-
-### KDE Plasma
-- **Package**: `kubuntu-desktop`
-- **Display Manager**: SDDM
-- **Display Server**: X11 + Wayland
-- **Features**: Highly customizable, Plasma 6, full Qt integration
-- **Recommended**: 2GB RAM minimum, 25GB disk space
-
-### XFCE
-- **Package**: `xubuntu-desktop`
-- **Display Manager**: LightDM
-- **Display Server**: X11 + Wayland
-- **Features**: Lightweight, traditional layout, low resource usage
-- **Recommended**: 1GB RAM minimum, 15GB disk space
-
-## 🐌 Audio & Media
-
-### PulseAudio + PipeWire
-Alpha OS features modern audio stack with both PulseAudio and PipeWire:
-
-- **PulseAudio**: Compatible sound server for all applications
-- **PipeWire**: Next-generation multimedia pipeline replacing PulseAudio/ALSA
-- **WirePlumber**: PipeWire session manager
-- **PulseAudio-BlueZ**: Bluetooth audio support
-- **apulse**: PulseAudio compatibility layer for Wayland
-
-**Audio Stack**: Applications → PulseAudio (via libpulse) → PipeWire → ALSA/JACK
-
-**Control Tools**:
-- `pavucontrol` - PulseAudio Volume Control
-- `pavucontrol-qt` - Qt version for Plasma
-- `wpctl` - PipeWire control utility
-- `pactl` - PulseAudio command line control
-
-### Multi-Media Support
-- **MP3 Decoder**: minimp3 library
-- **JPEG Decoder**: libjpeg integration
-- **Video Playback**: GStreamer framework with hardware acceleration
-- **Screen Capture**: xdg-desktop-portal with Wayland support
-
-## 🖥 Display Server Support
-
-Alpha OS supports both **X11** and **Wayland** display servers across all desktop environments:
-
-### X11 (Xorg)
-- Legacy compatibility mode
-- Universal application support
-- Proven stability and maturity
-- Available as fallback in all DEs
-
-### Wayland
-- Modern display server protocol
-- Reduced latency and tearing
-- Native GNOME session (default)
-- KDE Plasma Wayland session
-- XFCE X11 fallback with Wayland support via xdg-desktop-portal
-
-**Environment Variables**:
-- `QT_QPA_PLATFORM=wayland` - Force Qt Wayland
-- `GDK_BACKEND=wayland` - Force GTK Wayland
-- `MOZ_ENABLE_WAYLAND=1` - Firefox Wayland support
-
-## 📦 Ubuntu PPAs
-
-Alpha OS includes support for third-party PPAs to get the latest software:
-
-### Added PPAs:
-- `ubuntu-desktop-ppa` - Latest GNOME packages
-- `kubuntu-ppa/ppa` - Latest KDE Plasma updates
-- `cinnamon-team/ppa` - Latest Cinnamon desktop
-- `xfce-gooders/ppa` - XFCE goodies and plugins
-
-**Adding/Removing PPAs**:
-```bash
-# Add a PPA
-sudo add-apt-repository ppa:ubuntu-desktop/ppa
-sudo apt update
-
-# Remove a PPA
-sudo add-apt-repository --remove ppa:kubuntu/ppa
-sudo apt update
-
-# List all PPAs
-sudo add-apt-repository --list-type ppa
-```
-
-## 🚀 Quick Start
-
-### Installation
-
-Alpha OS can be installed from a USB drive or run live from ISO:
+**No ISO has been built from this tree.** `live-build` is not installed in the
+environment this repository was written in, and a real build needs root plus a
+multi-GB debootstrap download. The build tree is therefore validated by source
+review and by the static suite only:
 
 ```bash
-# Download Alpha OS ISO from the releases page
-# Write to USB: sudo dd if=alpha-os.iso of=/dev/sdX bs=4M status=progress
-
-# Boot from USB and select desired desktop environment at login
+make test          # ./scripts/run-tests.sh - static only, no root, no build
+make check-env     # reports missing build tools; never fails
 ```
 
-### First Boot
-1. Select your preferred desktop environment at the login screen
-2. Login with your credentials
-3. Choose your display server (X11 or Wayland) at the session selector
-4. Start exploring!
+`scripts/build-iso.sh` drives `./auto/config`, `./auto/build` and `./auto/clean`
+from the repository root; the `Makefile` calls the same script, so `make iso`
+and `./scripts/build-iso.sh all` are the same flow.
 
-### Switching Between Desktops
-At the login screen, click the gear icon or session selector to choose:
-- Alpha OS (GNOME)
-- Alpha OS Cinnamon
-- Alpha OS Plasma
-- Alpha OS XFCE
+A previous revision of this documentation was written while the tree was
+mid-migration and described the Vib-OS remnants, a `live/` directory and a
+top-level `packages/` list directory as if they were still present. None of them
+are.
 
-### Updating System
+The current package lists avoid package names that do not exist in resolute and
+would fail `Check_package` — `libgl1-mesa-glx`, `weston-launch`,
+`gnome-devel-tools` and similar. Do not reintroduce them as-is. See
+[docs/BUILD.md](docs/BUILD.md#known-nonexistent-packages-to-avoid).
+
+## Desktop environments
+
+The four desktops are the same, but they are **not** equivalent. GNOME is
+Wayland-only in Ubuntu 26.04; the X11 story there is a different product
+entirely. This table is the accurate one.
+
+| Desktop | X11 session | Wayland session | Notes |
+|---|---|---|---|
+| **GNOME 50** | None of its own. `gnome-session` ships only `wayland-sessions/gnome.desktop`. Use `gnome-session-flashback` (`xsessions/gnome-flashback-compiz.desktop`, `gnome-flashback-metacity.desktop`) for X11. | `wayland-sessions/gnome.desktop` | **Wayland-only.** `gnome-x11` / `gnome-wayland` packages do not exist in resolute. |
+| **Cinnamon 6.4.13** | `xsessions/cinnamon.desktop`, `xsessions/cinnamon2d.desktop` | `wayland-sessions/cinnamon-wayland.desktop` | Wayland session is experimental upstream — treat as beta. The file is `cinnamon.desktop`, not `Xcinnamon.desktop`. |
+| **KDE Plasma 6.6.4** | `xsessions/plasmax11.desktop` (via `plasma-session-x11` + `kwin-x11`) | `wayland-sessions/plasma.desktop` (via `plasma-session-wayland` + `kwin-wayland`) | **Cleanest dual stack** — both install side by side without conflict. The X11 file is `plasmax11.desktop`, not `plasma.desktop`. |
+| **XFCE 4.20.4** | `xsessions/xfce.desktop` | `wayland-sessions/xfce-wayland.desktop` (native, labwc-backed) | A real native Wayland session, not XWayland. `labwc` and `wayfire` also ship standalone sessions. |
+
+All four have Wayland. Only Cinnamon, Plasma and XFCE have a true X11 session of
+their own shell. Details and the exact greeter entries are in
+[docs/DESKTOP-ENVIRONMENTS.md](docs/DESKTOP-ENVIRONMENTS.md).
+
+### Why not the `-desktop` metapackages
+
+Alpha OS does **not** install `ubuntu-desktop`, `ubuntucinnamon-desktop`,
+`kubuntu-desktop` or `xubuntu-desktop`, even though all four exist in resolute.
+The reason is `ubuntu-desktop-minimal 1.570`, which declares:
+
+```
+Conflicts: kubuntu-desktop-minimal xubuntu-desktop-minimal
+```
+
+so co-installing Ubuntu flavours is unsatisfiable. Component packages are listed
+explicitly instead. A useful side effect: nothing pulls in `gdm3` or `sddm`, so
+**LightDM is the single display manager** for all four desktops.
+
+## Audio
+
+PipeWire is the real-time engine; `pipewire-pulse` speaks the PulseAudio protocol
+so existing PulseAudio applications work unchanged; `wireplumber` is the session
+manager.
+
+```
+apps -> libpulse -> pipewire-pulse -> PipeWire -> ALSA/JACK
+```
+
+`pulseaudio 17.0` and `pulseaudio-utils` are shipped and installed, but the
+standalone `pulseaudio` daemon is **masked** so it cannot race `pipewire-pulse`.
+
+Controls: `pavucontrol`, `pavucontrol-qt`, `wpctl`, `pactl`, `pw-cli`, `paprefs`.
+
+See [docs/AUDIO-AND-DISPLAY.md](docs/AUDIO-AND-DISPLAY.md#audio).
+
+## Display
+
+* **Xorg 21.1** — the X11 compatibility layer for every desktop.
+* **XWayland 24.1.10** — the X11 host for X11 applications inside Wayland sessions.
+* **Wayland** — `wayland-protocols 1.47`, `libwayland 1.24.0`,
+  `wayland-utils 1.3.0`, `seatd` / `libseat1`.
+* **Portals** — `xdg-desktop-portal 1.21.1` with the `-gtk`, `-kde`, `-xapp` and
+  `-gnome` backends. Screen sharing needs these; there is no other way on Wayland.
+
+## PPAs
+
+Six PPAs are added by the chroot hook and **all six fail softly**: a dead PPA is a
+warning, never a build failure, and the ISO must build with zero of them
+succeeding.
+
+```
+ppa:kubuntu-ppa/backports
+ppa:kubuntu-ppa/ppa
+ppa:ubuntu-desktop/ppa
+ppa:cinnamon-team/ppa
+ppa:xfce-gooders/ppa
+ppa:pipewire-debian/pipewire-upstream
+```
+
+**None of these is verified to have a `resolute` suite.** The PipeWire one is a
+Debian-side PPA and may have no resolute suite at all. Treat them as best-effort
+only; the image must not depend on any package from them.
+
+## Building
+
+Full instructions: **[docs/BUILD.md](docs/BUILD.md)**.
+
+`lb build` requires root and debootstraps an entire system, so it is slow —
+expect tens of minutes to hours, and plenty of disk space. There is no
+incremental fast path.
+
+## Testing an image
+
+Write the ISO to a USB stick and boot it, or test under QEMU:
+
 ```bash
-sudo apt update && sudo apt upgrade
-sudo do-release-upgrade  # For future Ubuntu LTS upgrades
+qemu-system-x86_64 \
+  -m 4G -cpu host -smp "$(nproc)" \
+  -drive if=none,id=hd0,format=raw,file=output/alpha-os-1.0.0-YYYYMMDD.iso \
+  -device virtio-blk-device,drive=hd0 \
+  -device qemu-xhci -device usb-kbd -device usb-tablet \
+  -vga virtio -display sdl \
+  -audiodev pa,id=audio0 -device intel-hda -device hda-duplex,audiodev=audio0 \
+  -netdev user,id=net0 -device virtio-net-device,netdev=net0 \
+  -boot d
 ```
 
-## 🛠 System Requirements
+`make run` does the same thing for you. It boots
+`output/alpha-os-1.0.0-YYYYMMDD.iso`, which is the name staged by
+`scripts/create-alphaos-iso.sh`; `make iso` on its own leaves the ISO in the
+build root as `binary.hybrid.iso` (and a copy in `output/` named for the
+distribution, see [docs/BUILD.md](docs/BUILD.md#where-the-iso-lands)).
 
-| Desktop | RAM | Disk Space | GPU |
-|---------|-----|------------|-----|
-| **GNOME** | 4GB+ | 25GB+ | Modern with 3D acceleration |
-| **Cinnamon** | 2GB+ | 20GB+ | Integrated or dedicated |
-| **KDE Plasma** | 2GB+ | 25GB+ | Modern with 3D acceleration |
-| **XFCE** | 1GB+ | 15GB+ | Any |
+## The three build traps
 
-## 🌐 Networking
+These are the things most likely to waste your afternoon. Each is explained in
+[docs/BUILD.md](docs/BUILD.md#the-three-build-traps).
 
-Alpha OS includes full networking support:
-- DHCP client (NetworkManager)
-- WiFi support (nm-applet)
-- IPv4/IPv6 dual stack
-- VPN support
-- Firewall (ufw)
+1. **`--mode ubuntu` silently downgrades you to Ubuntu 12.04.** In
+   `functions/defaults.sh` the Ubuntu patch hard-codes `LB_DISTRIBUTION=precise`
+   and never reads `/etc/lsb-release`. Without an explicit
+   `--distribution resolute` you get a 2012 image and **no error message**.
+2. **`--syslinux-theme` must be `live-build`.** Ubuntu's default
+   `ubuntu-oneiric` is uninstallable on resolute (`syslinux-themes-*` and
+   `gfxboot-theme-ubuntu` are gone) and `Check_package` aborts the build.
+3. **`lb config` overwrites `config/common`.** It does `cat > config/common`.
+   Hand edits to `config/common` or `config/binary` are destroyed by
+   `make config`; re-apply them from `auto/config` instead.
 
-## 📦 Package Management
+## Boot support: BIOS yes, UEFI not yet
 
-- **APT**: `apt`, `apt-get`, `apt-cache`
-- **Snap**: Pre-installed for sandboxed applications
-- **Flatpak**: Support for cross-distro applications
-- **PPAs**: Third-party package repositories
+The image is built as `binary.hybrid.iso` and is **BIOS-bootable**.
 
-## 🛡 Security
+**UEFI boot is not automatic in this live-build version.** Ubuntu's own patch
+set states there is no built-in BIOS+UEFI hybrid path in this tree.
+`config/common` already sets:
 
-- **Full Disk Encryption**: LUKS during installation
-- **AppArmor**: Mandatory access control profiles
-- **Firewall**: UFW enabled by default
-- **Regular Security Updates**: Via Ubuntu Pro
+```sh
+ISOHYBRID_OPTIONS="--uefi"
+GENISOIMAGE_OPTIONS_EXTRA="-eltorito-alt-boot -efi-boot boot/grub/efi.img -no-emul-boot -joliet-long"
+```
 
-## 📄 License
+(LP #1864426), which tells the ISO builder to embed `boot/grub/efi.img` as the
+EFI system partition — but the `*.binary` hook that actually *produces*
+`boot/grub/efi.img` does not exist yet. Until it does, a UEFI-only machine will
+not boot the ISO. The concrete manual procedure is written out in
+[docs/BUILD.md](docs/BUILD.md#getting-a-uefi-bootable-iso).
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Also note: do **not** put `boot=casper` in `--bootappend-live`; the Ubuntu patch
+rewrites it, and `casper 26.04.2` is auto-selected as the live initramfs anyway.
+The installer is `ubiquity 26.04.1`, enabled with `--debian-installer live`.
+Plain `--debian-installer` selects classic d-i udebs, which is the wrong flag
+here.
 
-## 🙏 Acknowledgments
+## System requirements
 
-- **Canonical**: Ubuntu 26.04 LTS foundation
-- **GNOME Project**: GNOME desktop environment
-- **Cinnamon Team**: Cinnamon desktop environment (Linux Mint)
-- **KDE Community**: KDE Plasma 6 desktop
-- **XFCE Project**: XFCE desktop environment
-- **PipeWire Developers**: Multimedia framework
-- **PulseAudio Team**: Sound server
-- **Ubuntu Community**: Testing and feedback
+Honest, and not per-desktop marketing figures. No benchmarks have been run on
+this image, because no image has been built.
 
-## 📞 Contact
+| Resource | Requirement |
+|---|---|
+| Architecture | amd64 (x86-64) |
+| RAM | 2 GB minimum to reach the greeter; 4 GB or more to work in GNOME or Plasma |
+| Disk | ~4–5 GB for the ISO, plus free space for a live session |
+| GPU | Any with a working `linux-generic` DRM driver. Software rendering via Mesa is a fallback, not a target. |
+| Network | Optional; the live session is usable offline. |
 
-- **Website**: [alpha-os.example.com](https://alpha-os.example.com)
-- **GitHub**: [github.com/ilovecheez/Alpha-OS](https://github.com/ilovecheez/Alpha-OS)
-- **Issues**: [GitHub Issues](https://github.com/ilovecheez/Alpha-OS/issues)
+## Documentation
 
-*"The future of desktop computing, unified in a single distribution."*
+* [docs/BUILD.md](docs/BUILD.md) — build guide, build traps, UEFI, troubleshooting
+* [docs/DESKTOP-ENVIRONMENTS.md](docs/DESKTOP-ENVIRONMENTS.md) — the four desktops, real session names, how to add another
+* [docs/AUDIO-AND-DISPLAY.md](docs/AUDIO-AND-DISPLAY.md) — PipeWire architecture, Xorg/XWayland/Wayland, portals
+* [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — how `config/`, `auto/` and the package lists fit together
+
+## License
+
+MIT — see [LICENSE](LICENSE).

@@ -1,0 +1,60 @@
+# Alpha OS — GNOME 50 desktop — Ubuntu 26.04 LTS (resolute)
+# Provenance: names verified as exact matches against the resolute
+# binary-amd64 Packages indexes on archive.ubuntu.com (released 23 Apr 2026).
+#
+# IMPORTANT LIMITATION: GNOME 50 in resolute is WAYLAND-ONLY. Verified from
+# Contents-amd64.gz: gnome-session ships only
+#   wayland-sessions/gnome.desktop
+# and NO xsessions/gnome.desktop. There is no X11 GNOME session in this
+# release. The ONLY X11 option for GNOME is gnome-session-flashback
+# (xsessions/gnome-flashback-{compiz,metacity}.desktop), which is included
+# below in a comment-delimited stanza.
+# There is no `gnome-x11` / `gnome-wayland` package pair any more, and
+# `gnome-accessibility` / `breeze-gtk` do not exist in resolute.
+# `breeze-gtk` is not needed anyway — Yaru is the GNOME 50 icon/GTK theme.
+
+gnome-shell
+mutter
+gnome-session-bin
+gnome-session
+gnome-shell-extensions
+gnome-terminal
+gnome-control-center
+gnome-settings-daemon
+gnome-initial-setup
+gnome-online-accounts
+gnome-calendar
+gnome-contacts
+gnome-weather
+nautilus
+nautilus-sendto
+gnome-software
+gnome-text-editor
+simple-scan
+shotwell
+eog
+totem
+rhythmbox
+yelp
+xdg-desktop-portal-gnome
+yaru-theme-gtk
+yaru-theme-icon
+yaru-theme-gnome-shell
+orca
+gnome-accessibility-themes
+gnome-accessibility-profiles
+firefox
+libreoffice
+libreoffice-l10n-en-gb
+vlc
+fonts-cantarell
+
+# ---------------------------------------------------------------------
+# BEGIN X11-only stanza: GNOME has no native X11 session in resolute.
+# gnome-session-flashback provides gnome-flashback-{compiz,metacity}.desktop
+# in xsessions/ and is the sole X11 fallback for GNOME. Verified present in
+# universe (source gnome-flashback 3.58.0-6ubuntu1).
+# ---------------------------------------------------------------------
+gnome-session-flashback
+# ---------------------------------------------------------------------
+# END X11-only stanza

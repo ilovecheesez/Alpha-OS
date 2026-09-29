@@ -1,0 +1,15 @@
+#!/bin/sh
+# auto/clean -- remove all build artifacts of the Alpha OS live image.
+#
+# This NEVER touches config/ or auto/: those are the checked-in configuration
+# tree and the driver scripts, and they are meant to survive a clean.
+
+set -e
+
+echo "==> Alpha OS: cleaning build tree"
+
+lb clean --purge
+
+rm -rf cache .build chroot binary *.iso
+
+echo "==> Clean. config/ and auto/ were left untouched."

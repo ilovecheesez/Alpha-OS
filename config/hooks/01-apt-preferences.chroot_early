@@ -1,0 +1,33 @@
+#!/bin/bash
+# Alpha OS - apt tuning applied BEFORE any package is installed.
+# Idempotent: writes a single drop-in file.
+set -eu
+
+APT_CONF=/etc/apt/apt.conf.d/99alphaos
+
+mkdir -p "$(dirname "$APT_CONF")"
+
+cat > "$APT_CONF" <<'EOF'
+// Alpha OS build-time apt policy
+Acquire::Retries "5";
+Acquire::http::Timeout "30";
+Acquire::https::Timeout "30";
+Acquire::ftp::Timeout "30";
+Acquire::Languages "none";
+
+// Keep the live image lean; packages that need Recommends opt in explicitly.
+APT::Install-Recommends "false";
+APT::Install-Suggests "false";
+
+// Do not let a transient mirror hiccup produce a different package set.
+APT::Get::Assume-Yes "true";
+APT::Get::Fix-Broken "true";
+APT::Sandbox::User "root";
+
+// Progress output stays readable in the build log.
+APT::Color "true";
+APT::Get::Show-Versions "false";
+EOF
+
+echo "99alphaos: written"
+exit 0

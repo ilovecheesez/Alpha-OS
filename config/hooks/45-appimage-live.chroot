@@ -1,0 +1,60 @@
+#!/bin/bash
+# Alpha OS - live-session runtime fixes.
+#   a) AppImage / Flatpak / bubblewrap need unprivileged user namespaces.
+#      Ubuntu 24.04+ ships /etc/sysctl.d/20-apparmor.conf which sets
+#      kernel.apparmor_restrict_unprivileged_userns = 1. sysctl applies files in
+#      lexical order, so 99-* wins over 20-* when both keys are set.
+#   b) /tmp and /var/tmp world-writable with sticky bit (live sessions share them).
+#   c) NetworkManager wait-online is disabled so the network comes up fast.
+# Idempotent.
+set -eu
+
+log() { echo "45-appimage-live: $*"; }
+
+# --- a) AppArmor user namespaces --------------------------------------------
+mkdir -p /etc/sysctl.d
+cat > /etc/sysctl.d/99-alphaos-live.conf <<'EOF'
+# Alpha OS live-session overrides.
+# Sorts after /etc/sysctl.d/20-apparmor.conf, so this value wins.
+# Required by AppImage, Flatpak and bubblewrap style sandboxes.
+kernel.apparmor_restrict_unprivileged_userns = 0
+EOF
+chmod 0644 /etc/sysctl.d/99-alphaos-live.conf
+
+if [ -f /etc/sysctl.d/20-apparmor.conf ]; then
+	log "20-apparmor.conf present; 99-alphaos-live.conf takes precedence (later lexical order)"
+fi
+
+# --- b) world-writable sticky temp dirs -------------------------------------
+for d in /tmp /var/tmp; do
+	if [ ! -d "$d" ]; then
+		mkdir -p "$d"
+	fi
+	chmod 1777 "$d"
+done
+
+# --- c) NetworkManager wait-online ------------------------------------------
+# Provide an empty wait-online unit drop-in: an empty unit file makes the target
+# a no-op instead of failing.
+if [ -d /etc/systemd/system ]; then
+	mkdir -p /etc/systemd/system/systemd-networkd-wait-online.service.d
+	: > /etc/systemd/system/systemd-networkd-wait-online.service.d/10-alphaos-no-wait.conf
+fi
+if [ -d /etc/NetworkManager/conf.d ]; then
+	cat > /etc/NetworkManager/conf.d/99-alphaos-live.conf <<'EOF'
+# Alpha OS: do not block boot on network readiness.
+[keyfile]
+# No wifi/wwan waiting; wired still comes up normally.
+no-auto-default=3
+EOF
+else
+	log "NetworkManager not installed; skipping wait-online config"
+fi
+
+# initramfs-side: casper waits on nm-wait-online in some images.
+if [ -f /etc/init.d/nm-wait-online ]; then
+	update-rc.d nm-wait-online disable >/dev/null 2>&1 || true
+fi
+
+log "done"
+exit 0

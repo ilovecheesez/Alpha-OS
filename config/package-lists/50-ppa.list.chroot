@@ -1,0 +1,32 @@
+# Alpha OS — PPAs — Ubuntu 26.04 LTS (resolute)
+#
+# This file intentionally contains ZERO package names.
+#
+# A PPA is not a package: it is an apt source (a signed extra `deb` line) plus
+# a signing key. It therefore cannot be expressed as a package-list line, and
+# putting an `add-apt-repository ppa:...` line here would be invalid syntax for
+# live-build's package list parser (which accepts bare package names only, one
+# per line, with `#` comments).
+#
+# Instead, every PPA is added by `config/hooks/50-ppas.chroot`, which is
+# run fail-softly: a dead or missing PPA logs a warning and is skipped. It must
+# never fail the ISO build.
+#
+# The PPA set considered for Alpha OS — ALL UNVERIFIED for resolute, since
+# PPAs are not part of the released suite and none of these was confirmed to
+# carry a `resolute` (or `questing`/`plucky` successor) series:
+#   ppa:kubuntu-ppa/backports
+#   ppa:kubuntu-ppa/ppa
+#   ppa:ubuntu-desktop/ppa
+#   ppa:cinnamon-team/ppa
+#   ppa:xfce-gooders/ppa
+#   ppa:pipewire-debian/pipewire-upstream   <- this is a DEBIAN PPA; it may
+#                                               have no resolute suite at all
+# Because none is verified, none of them may be a hard dependency of the build.
+#
+# Constraints honoured by the hook:
+#   * fail-soft: unreachable PPA => warning, build continues;
+#   * nothing installed from a PPA may break `--debian-installer live`
+#     (the installer path must remain installable from the official suite);
+#   * package installs in this file are restricted to names that also exist in
+#     the official resolute suite, so a missing PPA can never remove packages.

@@ -1,0 +1,92 @@
+#!/bin/bash
+# Alpha OS - make LightDM the single display manager.
+#
+# gdm3 and sddm are probably NOT installed (the flavour metapackages are excluded
+# from the package list because of Conflicts), so every action is guarded by
+# `dpkg -s`. systemd is not running in the chroot, so units are handled by
+# update-rc.d / alternatives / enable-sysvinit where possible.
+# Idempotent.
+set -eu
+
+log() { echo "30-displaymanager: $*"; }
+
+TARGET_DM=lightdm
+CANDIDATE_DMS="gdm3 sddm xdm display-manager"
+
+installed() {
+	dpkg -s "$1" >/dev/null 2>&1
+}
+
+if ! installed "$TARGET_DM"; then
+	log "ERROR: $TARGET_DM is not installed; cannot enforce a single DM" >&2
+	# Fail-soft: a warning, not a build abort.
+	exit 0
+fi
+
+# --- 1. debconf --------------------------------------------------------------
+if command -v debconf-set-selections >/dev/null 2>&1; then
+	echo "shared/default-display-manager shared/default-display-manager select lightdm" | debconf-set-selections || true
+	# Keep lightdm's postinst from asking during any later configure.
+	mkdir -p /var/cache/debconf
+	echo "shared/default-display-manager shared/default-display-manager select lightdm" > /var/cache/debconf/lightdm.templates || true
+fi
+
+# --- 2. alternatives --------------------------------------------------------
+if command -v update-alternatives >/dev/null 2>&1; then
+	if update-alternatives --display x-session-manager >/dev/null 2>&1; then
+		update-alternatives --set x-session-manager /usr/sbin/lightdm >/dev/null 2>&1 || true
+	fi
+	if update-alternatives --display display-manager >/dev/null 2>&1; then
+		update-alternatives --set display-manager /usr/sbin/lightdm >/dev/null 2>&1 || true
+	fi
+fi
+
+# --- 3. default-display-manager pointer -------------------------------------
+if [ -e /etc/X11/default-display-manager ] || [ -L /etc/X11/default-display-manager ]; then
+	cur=$(readlink -f /etc/X11/default-display-manager 2>/dev/null || echo "")
+	case "$cur" in
+		*/lightdm) : ;;
+		*)
+			if [ -e /usr/sbin/lightdm ] || [ -L /usr/sbin/lightdm ]; then
+				ln -sf /usr/sbin/lightdm /etc/X11/default-display-manager
+				log "pointed /etc/X11/default-display-manager at lightdm (was ${cur:-none})"
+			fi
+			;;
+	esac
+fi
+
+# --- 4. Disable every other installed DM ------------------------------------
+for dm in $CANDIDATE_DMS; do
+	[ "$dm" = "$TARGET_DM" ] && continue
+	if ! installed "$dm"; then
+		log "$dm not installed, nothing to disable"
+		continue
+	fi
+	log "disabling competing display manager $dm"
+	if command -v systemctl >/dev/null 2>&1; then
+		systemctl --root=/ mask "${dm}.service" >/dev/null 2>&1 || true
+	fi
+	if [ -d /etc/systemd/system ]; then
+		mkdir -p /etc/systemd/system
+		rm -f "/etc/systemd/system/${dm}.service"
+		ln -sf /dev/null "/etc/systemd/system/${dm}.service"
+	fi
+	if [ -x "/etc/init.d/$dm" ]; then
+		update-rc.d "$dm" disable >/dev/null 2>&1 || true
+		ln -sf /etc/rc6.d/K80${dm} "/etc/rc6.d/K80${dm}" 2>/dev/null || true
+	fi
+	# Remove it from the x-session-manager alternative if it registered there.
+	if command -v update-alternatives >/dev/null 2>&1; then
+		if update-alternatives --display x-session-manager 2>/dev/null | grep -q "$dm"; then
+			update-alternatives --remove x-session-manager "/usr/sbin/$dm" >/dev/null 2>&1 || true
+		fi
+	fi
+done
+
+# --- 5. Reconfigure lightdm so the change is recorded ------------------------
+if command -v dpkg-reconfigure >/dev/null 2>&1 && installed "$TARGET_DM"; then
+	DEBIAN_FRONTEND=noninteractive dpkg-reconfigure "$TARGET_DM" >/dev/null 2>&1 || log "dpkg-reconfigure lightdm returned non-zero (ignored)"
+fi
+
+log "lightdm is the display manager"
+exit 0

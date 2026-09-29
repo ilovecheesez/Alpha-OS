@@ -1,0 +1,41 @@
+# Alpha OS — Cinnamon 6.4.13 desktop — Ubuntu 26.04 LTS (resolute)
+# Provenance: names verified as exact matches against the resolute
+# binary-amd64 Packages indexes on archive.ubuntu.com (released 23 Apr 2026).
+#
+# Verified from Contents-amd64.gz: `cinnamon-common` ships BOTH
+#   xsessions/cinnamon.desktop
+#   xsessions/cinnamon2d.desktop
+#   wayland-sessions/cinnamon-wayland.desktop   (experimental)
+# so both display servers come from this single package — no separate
+# X11/Wayland package split is needed.
+# The session file is `cinnamon.desktop`, NOT `Xcinnamon.desktop`.
+# Spices are built in as of 6.4; `cinnamon-spices*` do not exist in resolute.
+# `xreader`/`xviewer` are gone — use `evince` and `eog` (shipped by nemo's
+# recommendation set and listed here).
+# `xdg-desktop-portal-xapp` hard-Depends on `xapps-common`, which is why
+# `xapps-common` is listed explicitly alongside `libxapp1`.
+
+cinnamon
+cinnamon-common
+cinnamon-control-center
+cinnamon-desktop-data
+cinnamon-desktop-environment
+cinnamon-l10n
+cinnamon-screensaver
+cinnamon-session
+cinnamon-settings-daemon
+nemo
+nemo-fileroller
+nemo-python
+libxapp1
+xapps-common
+evince
+eog
+xdg-desktop-portal-xapp
+lightdm
+lightdm-gtk-greeter
+firefox
+libreoffice
+vlc
+gnome-terminal
+system-config-printer
