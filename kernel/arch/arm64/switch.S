@@ -12,7 +12,7 @@
  */
 
 .global switch_context
-.type process_context_switch, %function
+.type switch_context, %function
 
 /*
  * void process_context_switch(cpu_context_t *old_ctx, cpu_context_t *new_ctx)

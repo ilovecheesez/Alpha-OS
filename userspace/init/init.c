@@ -142,7 +142,7 @@ static void mount_filesystems(void) {
   /* mount("devtmpfs", "/dev", "devtmpfs", 0, NULL); */
 
   /* Mount /tmp */
-  if (mkdir("/tmp", 01777) < 0 && errno != EEXIST) {
+  if (mkdir("/tmp", 0777) < 0 && errno != EEXIST) {
     /* Ignore error */
   }
   /* mount("tmpfs", "/tmp", "tmpfs", 0, "mode=1777"); */

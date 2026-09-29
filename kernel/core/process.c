@@ -241,7 +241,6 @@ int process_create(const char *path, int argc, char **argv) {
 
   // Set up process structure
   process_t *proc = &proc_table[slot];
-  proc->pid = next_pid++;
   strncpy(proc->name, path, PROCESS_NAME_MAX - 1);
   proc->name[PROCESS_NAME_MAX - 1] = '\0';
   proc->state = PROC_STATE_READY;

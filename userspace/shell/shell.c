@@ -93,6 +93,11 @@ static void print_num(long n)
     
     if (n < 0) {
         neg = 1;
+        /* Handle LONG_MIN specially to avoid overflow */
+        if (n == LONG_MIN) {
+            syscall3(SYS_write, 1, (long)"-9223372036854775808", 20);
+            return;
+        }
         n = -n;
     }
     
@@ -243,7 +248,7 @@ static void process_command(void)
     else if (strcmp(cmd_buf, "pid") == 0) {
         cmd_pid();
     }
-    else if (strncmp(cmd_buf, "echo", 4) == 0) {
+    else if ((strncmp(cmd_buf, "echo", 4) == 0) && (cmd_buf[4] == '\0' || cmd_buf[4] == ' ')) {
         cmd_echo(args);
     }
     else if (strcmp(cmd_buf, "clear") == 0) {

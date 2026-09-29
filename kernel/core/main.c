@@ -155,9 +155,6 @@ static void init_subsystems(void *dtb) {
 
   printk(KERN_INFO "[INIT] Phase 4: Filesystems\n");
 
-  /* Initialize Virtual Filesystem */
-  printk(KERN_INFO "  Initializing VFS...\n");
-  /* Initialize Virtual Filesystem */
   printk(KERN_INFO "  Initializing VFS...\n");
   vfs_init();
 
@@ -179,28 +176,28 @@ static void init_subsystems(void *dtb) {
   extern int ramfs_create_file_bytes(const char *path, mode_t mode,
                                      const uint8_t *data, size_t size);
 
-  ramfs_create_dir("Documents", 0755);
-  ramfs_create_dir("Downloads", 0755);
-  ramfs_create_dir("Pictures", 0755);
-  ramfs_create_dir("System", 0755);
-  ramfs_create_dir("Desktop", 0755);
+  ramfs_create_dir("/Documents", 0755);
+  ramfs_create_dir("/Downloads", 0755);
+  ramfs_create_dir("/Pictures", 0755);
+  ramfs_create_dir("/System", 0755);
+  ramfs_create_dir("/Desktop", 0755);
 
   /* Seed Desktop with sample files and folders */
   ramfs_create_file("/Desktop/notes.txt", 0644,
-                    "Welcome to Vib-OS!\n\nThis is your desktop - right-click "
-                    "for options!\n");
+                     "Welcome to Alpha OS!\n\nThis is your desktop - right-click "
+                     "for options!\n");
   ramfs_create_file("/Desktop/readme.txt", 0644,
-                    "Vib-OS Desktop Manager\n\n- Double-click to open files\n- "
-                    "Right-click for context menu\n");
+                     "Alpha OS Desktop Manager\n\n- Double-click to open files\n- "
+                     "Right-click for context menu\n");
 
   /* Create a subfolder on Desktop */
   extern int vfs_mkdir(const char *path, mode_t mode);
   vfs_mkdir("/Desktop/Projects", 0755);
-  ramfs_create_file("readme.txt", 0644,
-                    "Welcome to Vib-OS!\nThis is a real file in RamFS.");
-  ramfs_create_file("todo.txt", 0644,
-                    "- Implement Browser\n- Fix Bugs\n- Sleep");
-  ramfs_create_file_bytes("sample.mp3", 0644, vib_seed_mp3, vib_seed_mp3_len);
+  ramfs_create_file("/Desktop/readme.txt", 0644,
+                     "Welcome to Alpha OS!\nThis is a real file in RamFS.");
+  ramfs_create_file("/Desktop/todo.txt", 0644,
+                     "- Implement Browser\n- Fix Bugs\n- Sleep");
+  ramfs_create_file_bytes("/Desktop/sample.mp3", 0644, vib_seed_mp3, vib_seed_mp3_len);
 
   /* Add baseline JPEG images to Pictures directory */
   extern const unsigned char bootstrap_landscape_jpg[];
@@ -411,7 +408,6 @@ static void init_subsystems(void *dtb) {
  */
 
 /* Global terminal pointer for keyboard callback */
-static void *g_active_terminal = 0;
 
 /* Keyboard callback wrapper */
 /* Keyboard callback wrapper */
@@ -453,7 +449,7 @@ static void start_init_process(void) {
   /* Connect keyboard input to terminal */
   input_set_key_callback(keyboard_handler);
 
-  printk(KERN_INFO "GUI: Event loop started - type in terminal!\\n");
+  printk(KERN_INFO "GUI: Event loop started - type in terminal!\n");
 
   /* Initial render */
   gui_compose();
@@ -470,28 +466,22 @@ static void start_init_process(void) {
   uint64_t last_refresh = arch_timer_get_ms();
   const uint64_t REFRESH_MS = 33; /* 30 FPS - responsive mouse */
 
-  while (1) {
+while (1) {
     /* Poll virtio input devices (keyboard/mouse) - MUST call this! */
     input_poll();
 
     /* Poll for keyboard input from UART as well */
-    extern int uart_getc_nonblock(void);
-    extern void gui_handle_key_event(int key);
     int c = uart_getc_nonblock();
     if (c >= 0) {
-      /* Route to focused window */
-      gui_handle_key_event(c);
-      needs_redraw = 1;
+        /* Route to focused window */
+        gui_handle_key_event(c);
+        needs_redraw = 1;
     }
 
     /* Poll input system (Keyboard & Mouse) */
-    extern void input_poll(void);
     input_poll();
 
     /* Get mouse state (updated by input_poll) */
-    extern void mouse_get_position(int *x, int *y);
-    extern int mouse_get_buttons(void);
-    extern void gui_handle_mouse_event(int x, int y, int buttons);
 
     int mx, my;
     mouse_get_position(&mx, &my);
