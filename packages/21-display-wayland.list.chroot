@@ -1,0 +1,35 @@
+# Alpha OS - Package Lists for live-build
+# Ubuntu 26.04 LTS (Resolute Raccoon) based distribution
+# Wayland Display Support
+
+# Wayland core components
+wayland-protocols
+libwayland-bin
+libwayland-dev
+libwayland-server0
+libwayland-client0
+libwayland-cursor0
+libwayland-egl1
+wayland-utils
+weston
+
+# XWayland for X11 compatibility in Wayland sessions
+xwayland
+
+# Desktop portals (for screen sharing, etc. on Wayland)
+xdg-desktop-portal
+xdg-desktop-portal-gtk
+xdg-desktop-portal-kde
+xdg-desktop-portal-xapp
+
+# Input handling for Wayland
+libinput-tools
+
+# Desktop environment specific Wayland components
+# GNOME: mutter (already in ubuntu-desktop)
+# KDE: kwin-wayland (already in kubuntu-desktop)
+# XFCE: experimental Wayland via labwc or xfwm4 with xdg-desktop-portal
+labwc
+
+# Additional tools
+weston-launch

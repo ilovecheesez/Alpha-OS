@@ -1,0 +1,109 @@
+# Alpha OS - Package Lists for live-build
+# Ubuntu 26.04 LTS (Resolute Raccoon) based distribution
+# KDE Plasma Desktop Environment Packages
+
+# KDE meta-package
+kubuntu-desktop
+
+# KDE Plasma core
+plasma-desktop
+plasma-workspace
+plasma-netbook
+plasma-widgets-default
+plasma-utils
+
+# KDE Display Manager
+sddm
+sddm-theme-breeze
+
+# KDE File managers
+dolphin
+dolphin-emu
+
+# KDE text editors
+kate
+kwrite
+
+# KDE utilities
+yakuake
+kcalc
+kcharselect
+kcolorchooser
+kfloppy
+kig
+kmines
+knav
+knotes
+kpat
+krfb
+ksudoku
+ktouch
+kuserreview
+ark
+klipper
+kdeconnect
+dragonplayer
+kamoso
+spectacle
+
+# KDE multimedia
+okular
+gwenview
+elisa
+
+# KDE system tools
+kcachegrind
+kdbg
+kde-config-sound
+kde-config-system
+kde-telepathy
+kdenetwork-fileshare
+
+# GTK integration
+kde-gtk-config
+
+# KDE runtime dependencies
+kdegraphics-thumbnailers
+kdegraphics-strigi-analyzer
+
+# WebKit components (for Konqueror)
+kwebkitpart
+
+# KDE network managers
+kdenetwork-info
+kdenetwork-strigi-analyzers
+
+# Breeze theme (already pulled in by kubuntu-desktop)
+breeze
+breeze-gtk
+breeze-icon-theme
+breeze-wallpapers
+
+# Display manager (using SDDM for KDE)
+sddm
+
+# Wayland portal support
+xdg-desktop-portal-kde
+
+# Additional KDE runtime packages
+kde-runtime
+kdesdk-strigi-analyzer
+
+# System tools
+system-config-printer-gtk
+
+# Web browser
+firefox
+
+# Multimedia
+rhythmbox
+totem
+
+# Office
+libreoffice
+
+# Network
+network-manager
+
+# System monitoring
+ksysguard

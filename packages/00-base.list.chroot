@@ -1,0 +1,378 @@
+# Alpha OS - Package Lists for live-build
+# Ubuntu 26.04 LTS (Resolute Raccoon) based distribution
+# These are the packages that will be installed in the chroot
+
+# Base system packages
+# ============================================================================
+# Essential packages for any Ubuntu system
+# ============================================================================
+
+# System tasks and basic configuration
+tasksel
+tasksel-data
+ubiquity
+ubiquity-frontend-gtk
+network-manager
+initramfs-tools
+casper
+ lupin-casper
+discover
+discover-data
+laptop-detect
+os-prober
+
+# Kernel packages
+linux-generic
+linux-headers-generic
+
+# Core system tools
+bash
+coreutils
+dpkg
+grep
+sed
+awk
+cat
+mkdir
+chmod
+chown
+tar
+gzip
+bzip2
+xz-utils
+
+# Package management
+apt
+apt-utils
+
+# ============================================================================
+# Desktop Environment Packages
+# ============================================================================
+
+# GNOME Desktop Environment
+# ============================================================================
+
+# Meta-package for GNOME
+gnome-core
+
+# Essential GNOME components
+gnome-shell
+gnome-shell-extensions
+gnome-terminal
+gnome-control-center
+gnome-settings-daemon
+gnome-online-accounts
+gnome-calendar
+gnome-contacts
+gnome-weather
+
+# File management
+evolution-data-server
+nautilus
+evolution
+
+# Multimedia
+rhythmbox
+totem
+vlc
+gstreamer1.0-plugins-base
+gstreamer1.0-plugins-good
+gstreamer1.0-plugins-bad
+gstreamer1.0-plugins-ugly
+
+# Office applications
+libreoffice
+
+# Graphics and scanning
+shotwell
+simple-scan
+evince
+
+# Development tools
+git
+build-essential
+
+# Display manager (using LightDM across all DEs for consistency)
+lightdm
+
+# ============================================================================
+# Cinnamon Desktop Environment
+# ============================================================================
+
+# Cinnamon packages
+cinnamon
+cinnamon-control-center
+cinnamon-session
+cinnamon-settings-daemon
+cinnamon-screensaver
+cinnamon-desktop-data
+cinnamon-l10n
+cinnamon-common
+
+# File manager (Cinnamon uses Nemo)
+nemo
+nemo-fileroller
+nemo-python
+
+# Wayland portal support
+xdg-desktop-portal-xapp
+
+# ============================================================================
+# KDE Plasma Desktop Environment
+# ============================================================================
+
+# KDE packages
+plasma-desktop
+plasma-workspace
+plasma-netbook
+plasma-widgets-default
+plasma-utils
+
+# Display manager (SDDM for KDE)
+sddm
+sddm-theme-breeze
+
+# File managers
+dolphin
+
+# Text editors
+kate
+kwrite
+
+# Utilities
+yakuake
+kcalc
+kcharselect
+kcolorchooser
+kfloppy
+kig
+kmines
+knav
+knotes
+kpat
+krfb
+ksudoku
+ktouch
+kuserreview
+ark
+klipper
+kdeconnect
+dragonplayer
+kamoso
+spectacle
+okular
+gwenview
+elisa
+filelight
+kalarm
+kcachegrind
+kmenuedit
+ksysguard
+ktimeout
+ktorrent
+
+# GTK integration
+kde-gtk-config
+
+# Wayland portal support
+xdg-desktop-portal-kde
+
+# Breeze theme components
+breeze
+breeze-gtk
+breeze-icon-theme
+breeze-wallpapers
+
+# ============================================================================
+# XFCE Desktop Environment
+# ============================================================================
+
+# XFCE meta-package
+xfce
+
+# Core components
+xfce4
+xfce4-goodies
+xfce4-panel
+xfce4-session
+xfwm4
+xfdesktop4
+xfce4-appfinder
+xfce4-mixer
+xfce4-power-manager
+xfce4-screenshooter
+xfce4-taskmanager
+xfce4-notes
+thunar
+thunar-archive-plugin
+thunar-media-tags-plugin
+thunar-volman
+thunar-vcs-plugin
+xfce4-terminal
+mousepad
+parole
+ristretto
+xfce4-settings
+xfce4-control-center
+xfce4-screensaver
+
+# File manager (XFCE uses Thunar, already listed above)
+
+# Wayland portal support
+xdg-desktop-portal-gtk
+
+# ============================================================================
+# Audio and Multimedia (PipeWire + PulseAudio)
+# ============================================================================
+
+# PulseAudio (for compatibility)
+pulseaudio
+pulseaudio-utils
+pulseaudio-module-bluetooth
+pavucontrol
+pavucontrol-qt
+paprefs
+
+# PipeWire (modern audio/multimedia pipeline)
+pipewire
+pipewire-pulse
+pipewire-alsa
+pipewire-jack
+wireplumber
+
+# Bluetooth
+bluez
+bluez-tools
+blueman
+
+# Media players and codecs
+audacious
+audacious-plugins
+
+# GStreamer
+libav-tools
+
+# ============================================================================
+# Display Server (X11 + Wayland)
+# ============================================================================
+
+# X11 Display Server
+xorg
+xserver-xorg-core
+xserver-xorg-video-all
+xserver-xorg-input-all
+x11-utils
+x11-apps
+x11-session-utils
+x11-xserver-utils
+xauth
+xrdb
+xrandr
+xinput
+xev
+xprop
+xwininfo
+
+# Wayland Display Server
+wayland-protocols
+libwayland-bin
+libwayland-dev
+wayland-utils
+weston
+
+# XWayland (X11 compatibility for Wayland)
+xwayland
+
+# Desktop portals
+xdg-desktop-portal
+
+# Input
+libinput-tools
+
+# ============================================================================
+# Live System Utilities
+# ============================================================================
+
+# Live system utilities
+casper
+lupin-casper
+discover
+discover-data
+laptop-detect
+os-prober
+
+# Networking
+network-manager
+resolvconf
+
+# Hardware detection
+usbutils
+pciutils
+smartmontools
+
+# EFI and boot configuration
+efibootmgr
+grub-efi-amd64-bin
+grub-efi-arm64-bin
+shim-signed
+
+# Packaging tools
+mtools
+
+# ============================================================================
+# Power Management and Services
+# ============================================================================
+
+# Power management
+acpi
+upower
+
+# System services
+systemd
+init-system-helpers
+
+# ============================================================================
+# Development Tools (useful for users)
+# ============================================================================
+
+# Git
+git
+git-core
+git-man
+git-doc
+
+# Build tools
+build-essential
+
+# Package manager tools
+python3
+python3-pip
+
+# ============================================================================
+# System Maintenance
+# ============================================================================
+
+# System utilities
+dsstore
+exfat-utils
+ntfs-3g
+zip
+gunzip
+fdroid
+
+# ============================================================================
+# PPAs and Additional Software
+# ============================================================================
+
+# Ubuntu PPAs will be added via hooks
+# See: packages/50-ppa.list.chroot
+
+# ============================================================================
+# Meta-packages for convenience
+# ============================================================================
+
+# Desktop environment meta-packages (will be overridden by DE-specific packages)
+ubuntu-desktop
+ubuntucinnamon-desktop
+kubuntu-desktop
+xubuntu-desktop

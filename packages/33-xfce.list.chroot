@@ -1,0 +1,104 @@
+# Alpha OS - Package Lists for live-build
+# Ubuntu 26.04 LTS (Resolute Raccoon) based distribution
+# XFCE Desktop Environment Packages
+
+# XFCE meta-package
+xubuntu-desktop
+
+# XFCE core
+xfce4
+xfce4-goodies
+
+# XFCE panel and session
+xfce4-panel
+xfce4-session
+
+# XFCE window manager
+xfwm4
+
+# XFCE desktop manager
+xfdesktop4
+
+# XFCE application finder
+xfce4-appfinder
+
+# XFCE mixer
+xfce4-mixer
+
+# XFCE power manager
+xfce4-power-manager
+
+# XFCE screenshooter
+xfce4-screenshooter
+
+# XFCE task manager
+xfce4-taskmanager
+
+# XFCE notes
+xfce4-notes
+
+# Thunar file manager
+thunar
+thunar-archive-plugin
+thunar-media-tags-plugin
+thunar-volman
+thunar-vcs-plugin
+
+# Mousepad text editor
+mousepad
+
+# Parole media player
+parole
+
+# Ristretto image viewer
+ristretto
+
+# XFCE settings
+xfce4-settings
+xfce4-control-center
+xfce4-screenshooter
+
+# XFCE screensaver
+xfce4-screensaver
+
+# Display manager (using LightDM across all DEs for consistency)
+lightdm
+lightdm-gtk-greeter
+
+# Wayland portal support
+xdg-desktop-portal-gtk
+
+# Additional XFCE packages
+xfce4-power-manager-plugins
+xfce4-power-manager xfce4-power-manager-data
+
+# File manager plugins
+thunar-archive-plugin
+thunar-media-tags-plugin
+thunar-vcs-plugin
+
+# Printing support
+system-config-printer-gtk
+
+# Network manager
+network-manager
+
+# Multimedia codecs
+gstreamer1.0-plugins-base
+gstreamer1.0-plugins-good
+gstreamer1.0-plugins-bad
+gstreamer1.0-plugins-ugly
+
+# Web browser
+firefox
+
+# Office applications
+libreoffice
+
+# Audio
+pulseaudio
+pavucontrol
+
+# Additional applications included in Xubuntu
+catfish-file-searcher
+xfce4-pulseaudio-plugin

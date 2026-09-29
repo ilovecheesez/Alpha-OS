@@ -1,10 +1,10 @@
 #!/bin/bash
-# Run UnixOS tests
+# Alpha OS - Test Suite
 
 set -e
 
 echo "========================================"
-echo "UnixOS Test Suite"
+echo "Alpha OS Test Suite"
 echo "========================================"
 
 # Colors
@@ -19,7 +19,7 @@ FAILED=0
 run_test() {
     local name="$1"
     local cmd="$2"
-    
+
     echo -n "  Testing $name... "
     if eval "$cmd" > /dev/null 2>&1; then
         echo -e "${GREEN}PASS${NC}"
@@ -35,27 +35,28 @@ echo "Build Tests"
 echo "-----------"
 
 run_test "Makefile exists" "[ -f Makefile ]"
-run_test "Kernel directory" "[ -d kernel ]"
-run_test "Boot directory" "[ -d boot ]"
-run_test "Scripts executable" "[ -x scripts/setup-toolchain.sh ]"
+run_test "Live-build config exists" "[ -d live/config ]"
+run_test "Packages directory exists" "[ -d packages ]"
+run_test "Scripts executable" "[ -x scripts/build-iso.sh ]"
 
 echo ""
 echo "Toolchain Tests"
 echo "---------------"
 
-run_test "Clang available" "which clang"
-run_test "LLD available" "which ld.lld || [ -f /opt/homebrew/opt/llvm/bin/ld.lld ]"
+run_test "live-build available" "which lb"
+run_test "xorriso available" "which xorriso"
+run_test "mksquashfs available" "which mksquashfs"
+run_test "QEMU x86_64" "which qemu-system-x86_64"
 run_test "QEMU ARM64" "which qemu-system-aarch64"
 
 echo ""
-echo "Kernel Tests"
-echo "------------"
+echo "ISO Tests"
+echo "---------"
 
-if [ -f build/kernel/unixos.elf ]; then
-    run_test "Kernel binary exists" "[ -f build/kernel/unixos.elf ]"
-    run_test "Kernel is ARM64" "file build/kernel/unixos.elf | grep -q 'ARM aarch64'"
+if [ -f "output/alpha-os-*.iso" ]; then
+    run_test "ISO exists" "[ -f output/alpha-os-*.iso ]"
 else
-    echo -e "  ${YELLOW}Kernel not yet built, skipping...${NC}"
+    echo -e "  ${YELLOW}ISO not yet built, skipping...${NC}"
 fi
 
 echo ""

@@ -1,4 +1,3 @@
-#!/bin/bash
 # Alpha OS - Desktop Environment Packages
 # Ubuntu 26.04 LTS (Resolute Raccoon) based distribution
 
@@ -11,7 +10,6 @@ GNOME_PACKAGES=(
     "gnome-control-center"
     "gnome-settings-daemon"
     "nautilus"
-    "nautilus-sendto"
     "evince"
     "firefox"
     "libreoffice"
@@ -140,14 +138,9 @@ XFCE_PACKAGES=(
 AUDIO_PACKAGES=(
     "pulseaudio"
     "pulseaudio-utils"
-    "pulseaudio-utils-alsa"
-    "pulseaudio-module-bt"
+    "pulseaudio-module-bluetooth"
     "pavucontrol"
-    "pavucontrol-qt"
-    "paprefs"
-    "padevchooser"
     "pipewire"
-    "pipewire-bin"
     "pipewire-pulse"
     "pipewire-alsa"
     "pipewire-jack"
@@ -206,13 +199,17 @@ UBUNTU_PPAS=(
     "ppa:pipewire-debian/pipewire-upstream"
 )
 
-# Output package lists
-echo "=== Alpha OS Package Lists ==="
-echo ""
-echo "GNOME Packages: ${#GNOME_PACKAGES[@]}"
-echo "Cinnamon Packages: ${#CINNAMON_PACKAGES[@]}"
-echo "KDE Packages: ${#KDE_PACKAGES[@]}"
-echo "XFCE Packages: ${#XFCE_PACKAGES[@]}"
-echo "Audio Packages: ${#AUDIO_PACKAGES[@]}"
-echo "Display Packages: ${#DISPLAY_PACKAGES[@]}"
-echo "PPAs: ${#UBUNTU_PPAS[@]}"
+# Print package counts
+print_package_counts() {
+    echo "=== Alpha OS Package Lists ==="
+    echo ""
+    echo "GNOME Packages: ${#GNOME_PACKAGES[@]}"
+    echo "Cinnamon Packages: ${#CINNAMON_PACKAGES[@]}"
+    echo "KDE Packages: ${#KDE_PACKAGES[@]}"
+    echo "XFCE Packages: ${#XFCE_PACKAGES[@]}"
+    echo "Audio Packages: ${#AUDIO_PACKAGES[@]}"
+    echo "Display Packages: ${#DISPLAY_PACKAGES[@]}"
+    echo "PPAs: ${#UBUNTU_PPAS[@]}"
+}
+
+print_package_counts

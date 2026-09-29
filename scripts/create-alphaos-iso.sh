@@ -1,99 +1,62 @@
 #!/bin/bash
-# Alpha OS - Create Bootable ISO for Multi-Desktop Distribution
+# Alpha OS - Create Bootable ISO using live-build
 # Ubuntu 26.04 LTS (Resolute Raccoon) based
+# Replaces the old multiboot2-based script with a proper live-build ISO
 
 set -e
 
-BUILD_DIR="${1:-build}"
-ISO_DIR="${BUILD_DIR}/iso"
+LIVE_CONFIG_DIR="${1:-live/config}"
 OUTPUT_DIR="${2:-output}"
+ISO_NAME="alpha-os-1.0.0-$(date +%Y%m%d)"
+ISO_FILE="${OUTPUT_DIR}/${ISO_NAME}.iso"
 
 echo "============================================"
-echo "Alpha OS ISO Creator"
+echo "Alpha OS ISO Creator (live-build)"
 echo "============================================"
+echo ""
 
-mkdir -p "$ISO_DIR/boot/grub"
-mkdir -p "$ISO_DIR/EFI/BOOT"
-mkdir -p "$OUTPUT_DIR"
-
-# Check for kernel
-if [ ! -f "$BUILD_DIR/kernel/unixos.elf" ]; then
-    echo "[ERROR] Kernel not found. Building placeholder..."
-    echo "Alpha OS Kernel" > "$ISO_DIR/boot/README.txt"
+# Check for live-build
+if ! command -v lb &> /dev/null; then
+    echo "[ERROR] live-build not found. Install it:"
+    echo "  sudo apt-get install live-build"
+    exit 1
 fi
 
-# Create GRUB configuration for multi-desktop environment
-cat > "$ISO_DIR/boot/grub/grub.cfg" << 'EOF'
-set timeout=5
-set default=0
+# Create output directory
+mkdir -p "$OUTPUT_DIR"
 
-menuentry "Alpha OS - GNOME Desktop (Wayland)" {
-    echo "Alpha OS Boot: GNOME Desktop"
-    multiboot2 /boot/alphaos.elf desktop=gnome wayland=1
-    boot
-}
+# Check if live-build is already configured
+if [ ! -d "$LIVE_CONFIG_DIR" ]; then
+    echo "[ERROR] live-build configuration not found at: $LIVE_CONFIG_DIR"
+    echo "Run: make live-config"
+    exit 1
+fi
 
-menuentry "Alpha OS - GNOME Desktop (X11)" {
-    echo "Alpha OS Boot: GNOME Desktop"
-    multiboot2 /boot/alphaos.elf desktop=gnome wayland=0
-    boot
-}
+# Clean previous build
+echo "[CLEAN] Cleaning previous build..."
+lb clean 2>/dev/null || true
 
-menuentry "Alpha OS - Cinnamon Desktop (X11)" {
-    echo "Alpha OS Boot: Cinnamon Desktop"
-    multiboot2 /boot/alphaos.elf desktop=cinnamon wayland=0
-    boot
-}
+# Build the ISO
+echo "[BUILD] Building ISO with live-build..."
+lb build
 
-menuentry "Alpha OS - Cinnamon Desktop (Wayland)" {
-    echo "Alpha OS Boot: Cinnamon Desktop"
-    multiboot2 /boot/alphaos.elf desktop=cinnamon wayland=1
-    boot
-}
-
-menuentry "Alpha OS - KDE Plasma Desktop (Wayland)" {
-    echo "Alpha OS Boot: KDE Plasma Desktop"
-    multiboot2 /boot/alphaos.elf desktop=plasma wayland=1
-    boot
-}
-
-menuentry "Alpha OS - KDE Plasma Desktop (X11)" {
-    echo "Alpha OS Boot: KDE Plasma Desktop"
-    multiboot2 /boot/alphaos.elf desktop=plasma wayland=0
-    boot
-}
-
-menuentry "Alpha OS - XFCE Desktop (X11)" {
-    echo "Alpha OS Boot: XFCE Desktop"
-    multiboot2 /boot/alphaos.elf desktop=xfce wayland=0
-    boot
-}
-
-menuentry "Alpha OS - XFCE Desktop (Wayland)" {
-    echo "Alpha OS Boot: XFCE Desktop"
-    multiboot2 /boot/alphaos.elf desktop=xfce wayland=1
-    boot
-}
-
-menuentry "Alpha OS - Recovery Mode" {
-    echo "Alpha OS Boot: Recovery Mode"
-    multiboot2 /boot/alphaos.elf single debug
-    boot
-}
-
-menuentry "Alpha OS - Minimal Console" {
-    echo "Alpha OS Boot: Console Mode"
-    multiboot2 /boot/alphaos.elf console=tty0
-    boot
-}
-EOF
-
-# Create EFI boot configuration
-cat > "$ISO_DIR/EFI/BOOT/startup.nsh" << 'EOF'
-@echo off
-echo Alpha OS Boot Loader
-echo Loading kernel...
-\boot\alphaos.elf
-EOF
-
-echo "Done."
+# Copy the resulting ISO
+if [ -f "live-image-amd64.hybrid.iso" ]; then
+    cp "live-image-amd64.hybrid.iso" "$ISO_FILE"
+    echo ""
+    echo "============================================"
+    echo "ISO Created Successfully!"
+    echo "============================================"
+    echo ""
+    echo "Output: $ISO_FILE"
+    echo "Size: $(du -h "$ISO_FILE" | cut -f1)"
+    echo ""
+    echo "To test in QEMU:"
+    echo "  make run"
+    echo ""
+    echo "To write to USB:"
+    echo "  sudo dd if=$ISO_FILE of=/dev/sdX bs=4M status=progress"
+else
+    echo "[ERROR] ISO build failed. Check the output above for errors."
+    exit 1
+fi

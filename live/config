@@ -1,0 +1,192 @@
+# Alpha OS - live-build configuration
+# Ubuntu 26.04 LTS (Resolute Raccoon) based
+# AMD64 and ARM64 support
+
+# ============================================================================
+# Main Configuration
+# ============================================================================
+
+# Mode: ubuntu (uses Ubuntu's live-build defaults)
+--mode ubuntu
+
+# Distribution: Ubuntu 26.04 LTS "Resolute Raccoon"
+--distribution resolute
+
+# Architecture: amd64 (primary), arm64 (secondary)
+--architectures amd64
+
+# Linux flavour: generic (standard kernel)
+--linux-flavours generic
+
+# ============================================================================
+# Bootloader Configuration
+# ============================================================================
+
+# Use GRUB for both BIOS and UEFI
+--bootloader grub-pc-bin
+--bootloader grub-efi-amd64-bin
+
+# Bootloader: grub-efi-arm64-bin for ARM64
+--bootloader grub-efi-arm64-bin
+
+# ============================================================================
+# Package Configuration
+# ============================================================================
+
+# Archive areas: main, restricted, universe, multiverse
+--archive-areas "main restricted universe multiverse"
+
+# Enable backports
+--backports true
+
+# Enable security updates
+--security true
+
+# Enable updates
+--updates true
+
+# ============================================================================
+# Mirror Configuration
+# ============================================================================
+
+# Bootstrap mirror (Ubuntu archive)
+--mirror-bootstrap "http://archive.ubuntu.com/ubuntu/"
+
+# Chroot mirror (Ubuntu archive)
+--mirror-chroot "http://archive.ubuntu.com/ubuntu/"
+
+# Binary mirror (Ubuntu archive)
+--mirror-binary "http://archive.ubuntu.com/ubuntu/"
+
+# Binary mirror for security updates
+--mirror-binary-security "http://security.ubuntu.com/ubuntu"
+
+# ============================================================================
+# Live System Configuration
+# ============================================================================
+
+# Disable Debian Installer (we use the live system directly)
+--debian-installer false
+
+# Enable Ubuntu installer (ubiquity)
+--ubuntu-installer ubiquity
+
+# Boot options for live system
+--bootappend-live "boot=casper quiet splash"
+
+# ============================================================================
+# Chroot Configuration
+# ============================================================================
+
+# Enable chroot
+--chroot true
+
+# Enable chroot-local (packages installed after chroot)
+--chroot-local true
+
+# Enable chroot-filesystem
+--chroot-filesystem true
+
+# Enable chroot-filesystem-squashfs
+--chroot-filesystem-squashfs true
+
+# Enable chroot-filesystem-iso
+--chroot-filesystem-iso true
+
+# ============================================================================
+# Image Configuration
+# ============================================================================
+
+# Image type: hybrid ISO (works on both BIOS and UEFI)
+--image-type iso
+
+# Enable hybrid ISO
+--hybrid-iso true
+
+# Enable squashfs
+--squashfs true
+
+# Enable memtest
+--memtest none
+
+# ============================================================================
+# Firmware Configuration
+# ============================================================================
+
+# Enable firmware binary
+--firmware-binary true
+
+# Enable firmware chroot
+--firmware-chroot true
+
+# ============================================================================
+# QEMU Configuration (for cross-architecture builds)
+# ============================================================================
+
+# QEMU architecture for ARM64
+--bootstrap-qemu-arch aarch64
+
+# QEMU static binary path
+--bootstrap-qemu-static "/usr/bin/qemu-aarch64-static"
+
+# ============================================================================
+# Hooks Configuration
+# ============================================================================
+
+# Hook files (executed during build)
+--hooks-dir "hooks"
+
+# Chroot hooks (executed inside chroot)
+--chroot-hooks-dir "chroot_hooks"
+
+# Package lists (chroot)
+--packages-chroot "packages/00-base.list.chroot"
+--packages-chroot "packages/10-audio.list.chroot"
+--packages-chroot "packages/20-display-x11.list.chroot"
+--packages-chroot "packages/21-display-wayland.list.chroot"
+--packages-chroot "packages/30-gnome.list.chroot"
+--packages-chroot "packages/31-cinnamon.list.chroot"
+--packages-chroot "packages/32-plasma.list.chroot"
+--packages-chroot "packages/33-xfce.list.chroot"
+--packages-chroot "packages/40-live.list.chroot"
+--packages-chroot "packages/50-ppa.list.chroot"
+
+# ============================================================================
+# Output Configuration
+# ============================================================================
+
+# Output directory
+--output-directory "output"
+
+# Output filename
+--output-name "alpha-os-1.0.0-$(date +%Y%m%d)"
+
+# ============================================================================
+# Custom Configuration
+# ============================================================================
+
+# Hostname for live system
+--hostname "alphaos"
+
+# Domain for live system
+--domain "alphaos.local"
+
+# Timezone
+--timezone "UTC"
+
+# Keyboard layout
+--keyboard "us"
+
+# Language
+--language "en_US.UTF-8"
+
+# ============================================================================
+# Notes
+# ============================================================================
+
+# This configuration creates an Ubuntu 26.04 LTS based live image with:
+# - GNOME, Cinnamon, KDE Plasma, and XFCE desktop environments
+# - PipeWire audio stack with PulseAudio compatibility
+# - X11 and Wayland display server support
+# - Ubuntu PPAs for latest software
+# - LightDM as standard display manager

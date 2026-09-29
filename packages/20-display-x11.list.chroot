@@ -1,0 +1,70 @@
+# Alpha OS - Package Lists for live-build
+# Ubuntu 26.04 LTS (Resolute Raccoon) based distribution
+# Display Server Packages (X11 + Wayland)
+
+# X11 (Xorg) Display Server
+xorg
+xserver-xorg-core
+xserver-xorg-video-all
+xserver-xorg-input-all
+xserver-xorg-video-vmware
+xserver-xorg-video-qxl
+xserver-xorg-video-intel
+xserver-xorg-video-amd
+xserver-xorg-video-nouveau
+
+# X11 utilities
+x11-utils
+x11-xserver-utils
+x11-session-utils
+xinit
+xhost
+
+# X11 apps
+x11-apps
+
+# Input drivers
+xserver-xorg-input-libinput
+xserver-xorg-input-evdev
+xserver-xorg-input-synaptics
+
+# Wayland Display Server
+wayland-protocols
+libwayland-bin
+libwayland-dev
+libwayland-server0
+libwayland-client0
+libwayland-cursor0
+libwayland-egl1
+wayland-utils
+weston
+
+# XWayland (X11 compatibility for Wayland)
+xwayland
+
+# Desktop portals for Wayland
+xdg-desktop-portal
+xdg-desktop-portal-gtk
+xdg-desktop-portal-kde
+xdg-desktop-portal-xapp
+
+# Input library
+libinput-tools
+
+# Xorg individual fonts and configs
+xfonts-terminus
+xfonts-75dpi
+xfonts-100dpi
+xfonts-utils
+
+# Session management
+dbus-x11
+
+# Compositors
+# GNOME has mutter built-in
+# KDE has kwin-wayland
+# XFCE can use xfwm4 or labwc for Wayland
+
+# VR / headset support
+libgl1-mesa-dri
+libgl1-mesa-glx

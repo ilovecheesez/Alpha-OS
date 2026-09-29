@@ -1,0 +1,76 @@
+# Alpha OS - Package Lists for live-build
+# Ubuntu 26.04 LTS (Resolute Raccoon) based distribution
+# GNOME Desktop Environment Packages
+
+# GNOME meta-package (pulls in all GNOME desktop components)
+ubuntu-desktop
+
+# GNOME core components
+gnome-shell
+gnome-shell-extensions
+gnome-terminal
+gnome-control-center
+gnome-settings-daemon
+gnome-online-accounts
+gnome-calendar
+gnome-contacts
+gnome-weather
+
+# File management and document handling
+evolution-data-server
+nautilus
+nautilus-extensions
+nautilus-sendto
+nautilus-3
+
+# Multimedia and audio
+gstreamer1.0-plugins-base
+gstreamer1.0-plugins-good
+gstreamer1.0-plugins-bad
+gstreamer1.0-plugins-ugly
+gstreamer1.0-libav
+
+# Office productivity
+libreoffice
+libreoffice-l10n-en
+libreoffice-help-en
+
+# Multimedia playback
+rhythmbox
+totem
+vlc
+
+# Graphics and scanning
+shotwell
+simple-scan
+evince
+
+# Photo management
+gpicview
+
+# Games
+games
+
+# Development tools
+gnome-devel-tools
+
+# Display manager (using LightDM across all DEs for consistency)
+lightdm
+lightdm-gtk-greeter
+
+# Networking tools
+network-manager
+network-manager-gnome
+
+# System settings
+gnome-settings-daemon
+
+# User account management
+accounts-daemon
+
+# Accessibility tools
+gnome-accessibility
+
+# File sharing and remote desktop
+evolution
+evolution-data-server
